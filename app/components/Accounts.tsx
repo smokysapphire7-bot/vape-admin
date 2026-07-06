@@ -6,21 +6,19 @@ type Order = {
   date: string;
   site: string;
   product: string;
-  customerName: string;
   qty: number;
   salePrice: number;
   purchasePrice: number;
   profit: number;
-  area: string;
   status: string;
 };
 
 const SAMPLE_ORDERS: Order[] = [
-  { id: "001", date: "2026-07-06", site: "VIM", product: "Elfbar Raya D1", customerName: "Rahul S.", qty: 1, salePrice: 2399, purchasePrice: 1800, profit: 599, area: "Bandra West", status: "Delivered" },
-  { id: "002", date: "2026-07-06", site: "TVH", product: "ZYN Cool Mint", customerName: "Priya K.", qty: 2, salePrice: 2598, purchasePrice: 1800, profit: 798, area: "HITEC City", status: "Delivered" },
-  { id: "003", date: "2026-07-06", site: "TVP", product: "Caliburn G4", customerName: "Arjun M.", qty: 1, salePrice: 7499, purchasePrice: 5500, profit: 1999, area: "Koregaon Park", status: "Delivered" },
-  { id: "004", date: "2026-07-05", site: "VIM", product: "Elfbar MoonNight 40K", customerName: "Sneha R.", qty: 1, salePrice: 3299, purchasePrice: 2400, profit: 899, area: "Andheri West", status: "Delivered" },
-  { id: "005", date: "2026-07-05", site: "TVH", product: "Elfbar Raya D3", customerName: "Karan D.", qty: 2, salePrice: 5998, purchasePrice: 4400, profit: 1598, area: "Banjara Hills", status: "Delivered" },
+  { id: "001", date: "2026-07-06", site: "VIM", product: "Elfbar Raya D1", qty: 1, salePrice: 2399, purchasePrice: 1800, profit: 599, status: "Delivered" },
+  { id: "002", date: "2026-07-06", site: "TVH", product: "ZYN Cool Mint", qty: 2, salePrice: 2598, purchasePrice: 1800, profit: 798, status: "Delivered" },
+  { id: "003", date: "2026-07-06", site: "TVP", product: "Caliburn G4", qty: 1, salePrice: 7499, purchasePrice: 5500, profit: 1999, status: "Delivered" },
+  { id: "004", date: "2026-07-05", site: "VIM", product: "Elfbar MoonNight 40K", qty: 1, salePrice: 3299, purchasePrice: 2400, profit: 899, status: "Delivered" },
+  { id: "005", date: "2026-07-05", site: "TVH", product: "Elfbar Raya D3", qty: 2, salePrice: 5998, purchasePrice: 4400, profit: 1598, status: "Delivered" },
 ];
 
 const PRODUCTS = [
@@ -32,7 +30,7 @@ const PRODUCTS = [
   "Caliburn G4 Pro","Caliburn G5 Lite","Caliburn GK2",
 ];
 
-const EMPTY_FORM = { site: "VIM", product: "Elfbar Raya D1", customerName: "", qty: "1", salePrice: "", purchasePrice: "", area: "", status: "Delivered", date: new Date().toISOString().split("T")[0] };
+const EMPTY_FORM = { site: "VIM", product: "Elfbar Raya D1", qty: "1", salePrice: "", purchasePrice: "", status: "Delivered", date: new Date().toISOString().split("T")[0] };
 
 type Props = { onToast: (msg: string) => void; };
 
@@ -60,8 +58,8 @@ export default function Accounts({ onToast }: Props) {
   };
 
   const downloadExcel = () => {
-    const headers = ["#","Date","Site","Customer","Product","Qty","Sale Price","Purchase Price","Profit","Area","Status"];
-    const rows = filtered.map(o => [o.id, o.date, o.site, o.customerName, o.product, o.qty, o.salePrice, o.purchasePrice, o.profit, o.area, o.status]);
+    const headers = ["#","Date","Site","Product","Qty","Sale Price","Purchase Price","Profit","Status"];
+    const rows = filtered.map(o => [o.id, o.date, o.site, o.product, o.qty, o.salePrice, o.purchasePrice, o.profit, o.status]);
     const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -81,12 +79,10 @@ export default function Accounts({ onToast }: Props) {
       date: form.date || new Date().toISOString().split("T")[0],
       site: form.site,
       product: form.product,
-      customerName: form.customerName || "—",
       qty,
       salePrice: sale * qty,
       purchasePrice: purchase * qty,
       profit: (sale - purchase) * qty,
-      area: form.area,
       status: form.status,
     };
     setOrders(prev => {
@@ -186,10 +182,7 @@ export default function Accounts({ onToast }: Props) {
                 {PRODUCTS.map(p => <option key={p}>{p}</option>)}
               </select>
             </div>
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Customer name</label>
-              <input value={form.customerName} onChange={e => update("customerName", e.target.value)} placeholder="e.g. Rahul S." />
-            </div>
+
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
@@ -214,10 +207,7 @@ export default function Accounts({ onToast }: Props) {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Delivery area *</label>
-              <input value={form.area} onChange={e => update("area", e.target.value)} placeholder="e.g. Bandra West" />
-            </div>
+
             <div>
               <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Status</label>
               <select value={form.status} onChange={e => update("status", e.target.value)}>
@@ -311,7 +301,7 @@ export default function Accounts({ onToast }: Props) {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #e0e0e0" }}>
-                  {["#","Date","Site","Customer","Product","Qty","Sale","Purchase","Profit","Area","Status",""].map(h => (
+                  {["#","Date","Site","Product","Qty","Sale","Purchase","Profit","Status",""].map(h => (
                     <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -324,13 +314,11 @@ export default function Accounts({ onToast }: Props) {
                     <td style={{ padding: "8px 10px" }}>
                       <span style={{ background: "#FEF2F2", color: "#E23744", padding: "2px 8px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>{order.site}</span>
                     </td>
-                    <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>{order.customerName}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 500, whiteSpace: "nowrap" }}>{order.product}</td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>{order.qty}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 600, whiteSpace: "nowrap" }}>₹{order.salePrice.toLocaleString("en-IN")}</td>
                     <td style={{ padding: "8px 10px", color: "#888", whiteSpace: "nowrap" }}>₹{order.purchasePrice.toLocaleString("en-IN")}</td>
                     <td style={{ padding: "8px 10px", fontWeight: 600, color: "#059669", whiteSpace: "nowrap" }}>₹{order.profit.toLocaleString("en-IN")}</td>
-                    <td style={{ padding: "8px 10px", color: "#555", whiteSpace: "nowrap" }}>{order.area}</td>
                     <td style={{ padding: "8px 10px" }}>
                       <span style={{ background: order.status === "Delivered" ? "#e8faf0" : order.status === "Pending" ? "#FFF9E6" : "#FEF2F2", color: order.status === "Delivered" ? "#059669" : order.status === "Pending" ? "#D97706" : "#E23744", padding: "2px 8px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>{order.status}</span>
                     </td>
