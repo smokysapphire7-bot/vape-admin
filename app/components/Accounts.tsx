@@ -205,7 +205,7 @@ export default function Accounts({ onToast }: Props) {
         </div>
       </div>
 
-      {subTab === "orders" && <div>{/* Reset Confirm */}
+      {subTab === "orders" && <div>
       {showReset && (
         <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
@@ -392,6 +392,8 @@ export default function Accounts({ onToast }: Props) {
         )}
       </div>
     </div>
+
+      </div>}
 
       {subTab === "purchases" && (
         <div>
