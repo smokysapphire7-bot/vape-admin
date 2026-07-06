@@ -13,477 +13,378 @@ type Order = {
   status: string;
 };
 
-const SAMPLE_ORDERS: Order[] = [
-  { id: "001", date: "2026-07-06", site: "VIM", product: "Elfbar Raya D1", qty: 1, salePrice: 2399, purchasePrice: 1800, profit: 599, status: "Delivered" },
-  { id: "002", date: "2026-07-06", site: "TVH", product: "ZYN Cool Mint", qty: 2, salePrice: 2598, purchasePrice: 1800, profit: 798, status: "Delivered" },
-  { id: "003", date: "2026-07-06", site: "TVP", product: "Caliburn G4", qty: 1, salePrice: 7499, purchasePrice: 5500, profit: 1999, status: "Delivered" },
-  { id: "004", date: "2026-07-05", site: "VIM", product: "Elfbar MoonNight 40K", qty: 1, salePrice: 3299, purchasePrice: 2400, profit: 899, status: "Delivered" },
-  { id: "005", date: "2026-07-05", site: "TVH", product: "Elfbar Raya D3", qty: 2, salePrice: 5998, purchasePrice: 4400, profit: 1598, status: "Delivered" },
-];
+type Purchase = {
+  id: string;
+  date: string;
+  supplier: string;
+  product: string;
+  qty: number;
+  unitCost: number;
+  totalCost: number;
+  site: string;
+  notes: string;
+};
+
+type Payout = {
+  id: string;
+  date: string;
+  recipient: string;
+  amount: number;
+  type: string;
+  notes: string;
+};
+
+const EMPTY_ORDER = { site: "VIM", product: "Elfbar Raya D1", qty: "1", salePrice: "", purchasePrice: "", status: "Delivered", date: new Date().toISOString().split("T")[0] };
+const EMPTY_PURCHASE = { date: new Date().toISOString().split("T")[0], supplier: "", product: "", qty: "1", unitCost: "", site: "VIM", notes: "" };
+const EMPTY_PAYOUT = { date: new Date().toISOString().split("T")[0], recipient: "", amount: "", type: "Delivery Cost", notes: "" };
 
 const PRODUCTS = [
-  "Elfbar 600","Elfbar Raya D1","Elfbar MoonNight 40K","Elfbar Raya D3",
-  "Elfbar D3 Pro","Elfbar Ice King","Elfbar SOBO","Elfbar Trio","Elfbar BC10000",
-  "Lost Mary MT35000","Lost Mary MO10000","Nasty Bolt WTF 50K","IGET Astro B18K",
-  "Yuoto Beyonder","Yuoto Thanos","Elfliq Nic Salt","Pod Salt Core","Nasty Salt",
-  "ZYN Cool Mint","Velo Peppermint","Tobacco","Caliburn G3 Pro","Caliburn G4",
-  "Caliburn G4 Pro","Caliburn G5 Lite","Caliburn GK2",
+  "Elfbar 600","Elfbar Raya D1","Elfbar MoonNight 40K","Elfbar Raya D3","Elfbar D3 Pro",
+  "Elfbar Ice King","Elfbar SOBO","Elfbar Trio","Elfbar BC10000","Lost Mary MT35000",
+  "Lost Mary MO10000","Nasty Bolt WTF 50K","IGET Astro B18K","Yuoto Beyonder","Yuoto Thanos",
+  "Elfliq Nic Salt","Pod Salt Core","Nasty Salt","ZYN Cool Mint","Velo Peppermint",
+  "Tobacco","Caliburn G3 Pro","Caliburn G4","Caliburn G4 Pro","Caliburn G5 Lite","Caliburn GK2",
 ];
 
-const EMPTY_FORM = { site: "VIM", product: "Elfbar Raya D1", qty: "1", salePrice: "", purchasePrice: "", status: "Delivered", date: new Date().toISOString().split("T")[0] };
+const PAYOUT_TYPES = ["Delivery Cost","Hosting","Salary","Marketing","Packaging","Other"];
 
 type Props = { onToast: (msg: string) => void; };
 
 export default function Accounts({ onToast }: Props) {
-  const [orders, setOrders] = useState<Order[]>(() => {
-    try {
-      const saved = localStorage.getItem("vape_orders");
-      return saved ? JSON.parse(saved) : SAMPLE_ORDERS;
-    } catch { return SAMPLE_ORDERS; }
-  });
+  const [subTab, setSubTab] = useState<"orders"|"purchases"|"payouts">("orders");
   const [filterSite, setFilterSite] = useState("all");
-  const [subTab, setSubTab] = useState<"orders" | "purchases" | "payouts">("orders");
-  const [showForm, setShowForm] = useState(false);
-  const [showReset, setShowReset] = useState(false);
-  const [form, setForm] = useState({ ...EMPTY_FORM });
 
-  const update = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
-
-  // Purchases state
-  const [purchases, setPurchases] = useState<{id:string;date:string;supplier:string;product:string;qty:number;unitCost:number;totalCost:number;site:string;notes:string;}[]>(() => {
+  const [orders, setOrders] = useState<Order[]>(() => {
+    try { const s = localStorage.getItem("vape_orders"); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const [purchases, setPurchases] = useState<Purchase[]>(() => {
     try { const s = localStorage.getItem("vape_purchases"); return s ? JSON.parse(s) : []; } catch { return []; }
   });
-  const [payouts, setPayouts] = useState<{id:string;date:string;recipient:string;amount:number;type:string;notes:string;}[]>(() => {
+  const [payouts, setPayouts] = useState<Payout[]>(() => {
     try { const s = localStorage.getItem("vape_payouts"); return s ? JSON.parse(s) : []; } catch { return []; }
   });
-  const [pForm, setPForm] = useState({ date: new Date().toISOString().split("T")[0], supplier: "", product: "", qty: "1", unitCost: "", site: "VIM", notes: "" });
-  const [oForm, setOForm] = useState({ date: new Date().toISOString().split("T")[0], recipient: "", amount: "", type: "Delivery Cost", notes: "" });
-  const [showPForm, setShowPForm] = useState(false);
-  const [showOForm, setShowOForm] = useState(false);
-  const updatePF = (k:string,v:string) => setPForm(p => ({...p,[k]:v}));
-  const updateOF = (k:string,v:string) => setOForm(p => ({...p,[k]:v}));
 
-  const addPurchase = () => {
-    if (!pForm.product || !pForm.unitCost) return;
-    const qty = parseInt(pForm.qty||"1"), unit = parseInt(pForm.unitCost);
-    const np = { id:"P"+String(purchases.length+1).padStart(3,"0"), date:pForm.date, supplier:pForm.supplier||"—", product:pForm.product, qty, unitCost:unit, totalCost:qty*unit, site:pForm.site, notes:pForm.notes };
-    setPurchases(prev => { const u=[np,...prev]; try{localStorage.setItem("vape_purchases",JSON.stringify(u))}catch{}; return u; });
-    setShowPForm(false); setPForm({ date: new Date().toISOString().split("T")[0], supplier:"",product:"",qty:"1",unitCost:"",site:"VIM",notes:"" });
-    onToast("Purchase logged");
-  };
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [showPayoutForm, setShowPayoutForm] = useState(false);
+  const [showReset, setShowReset] = useState(false);
 
-  const addPayout = () => {
-    if (!oForm.recipient || !oForm.amount) return;
-    const no = { id:"O"+String(payouts.length+1).padStart(3,"0"), date:oForm.date, recipient:oForm.recipient, amount:parseInt(oForm.amount), type:oForm.type, notes:oForm.notes };
-    setPayouts(prev => { const u=[no,...prev]; try{localStorage.setItem("vape_payouts",JSON.stringify(u))}catch{}; return u; });
-    setShowOForm(false); setOForm({ date: new Date().toISOString().split("T")[0], recipient:"",amount:"",type:"Delivery Cost",notes:"" });
-    onToast("Payout logged");
-  };
+  const [orderForm, setOrderForm] = useState({ ...EMPTY_ORDER });
+  const [purchaseForm, setPurchaseForm] = useState({ ...EMPTY_PURCHASE });
+  const [payoutForm, setPayoutForm] = useState({ ...EMPTY_PAYOUT });
 
-  const deletePurchase = (id:string) => setPurchases(prev => { const u=prev.filter(p=>p.id!==id); try{localStorage.setItem("vape_purchases",JSON.stringify(u))}catch{}; return u; });
-  const deletePayout = (id:string) => setPayouts(prev => { const u=prev.filter(p=>p.id!==id); try{localStorage.setItem("vape_payouts",JSON.stringify(u))}catch{}; return u; });
+  const updateO = (k: string, v: string) => setOrderForm(p => ({ ...p, [k]: v }));
+  const updateP = (k: string, v: string) => setPurchaseForm(p => ({ ...p, [k]: v }));
+  const updatePO = (k: string, v: string) => setPayoutForm(p => ({ ...p, [k]: v }));
 
-  const downloadPurchases = () => {
-    const h=["#","Date","Supplier","Product","Qty","Unit Cost","Total","Site","Notes"];
-    const r=purchases.map(p=>[p.id,p.date,p.supplier,p.product,p.qty,p.unitCost,p.totalCost,p.site,p.notes]);
-    const csv=[h,...r].map(x=>x.join(",")).join("\n");
-    const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="purchases_"+new Date().toISOString().split("T")[0]+".csv"; a.click();
-  };
-
-  const downloadPayouts = () => {
-    const h=["#","Date","Recipient","Type","Amount","Notes"];
-    const r=payouts.map(p=>[p.id,p.date,p.recipient,p.type,p.amount,p.notes]);
-    const csv=[h,...r].map(x=>x.join(",")).join("\n");
-    const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="payouts_"+new Date().toISOString().split("T")[0]+".csv"; a.click();
-  };
-
-  const totalPurchases = purchases.reduce((s,p)=>s+p.totalCost,0);
-  const totalPayouts = payouts.reduce((s,p)=>s+p.amount,0);
-  const PAYOUT_TYPES = ["Delivery Cost","Hosting","Salary","Marketing","Packaging","Other"];
-
-  const deleteOrder = (id: string) => {
-    setOrders(prev => {
-      const updated = prev.filter(o => o.id !== id);
-      try { localStorage.setItem("vape_orders", JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    onToast("Order deleted");
-  };
-
-  const downloadExcel = () => {
-    const headers = ["#","Date","Site","Product","Qty","Sale Price","Purchase Price","Profit","Status"];
-    const rows = filtered.map(o => [o.id, o.date, o.site, o.product, o.qty, o.salePrice, o.purchasePrice, o.profit, o.status]);
-    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "vape_orders_" + new Date().toISOString().split("T")[0] + ".csv";
-    a.click(); URL.revokeObjectURL(url);
-    onToast("Orders exported");
+  const save = (key: string, data: unknown[]) => {
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
   };
 
   const addOrder = () => {
-    if (!form.salePrice || !form.area) { onToast("Please fill sale price and area"); return; }
-    const sale = parseInt(form.salePrice);
-    const purchase = parseInt(form.purchasePrice || "0");
-    const qty = parseInt(form.qty || "1");
+    if (!orderForm.salePrice) { onToast("Enter sale price"); return; }
+    const sale = parseInt(orderForm.salePrice);
+    const purchase = parseInt(orderForm.purchasePrice || "0");
+    const qty = parseInt(orderForm.qty || "1");
     const newOrder: Order = {
       id: String(orders.length + 1).padStart(3, "0"),
-      date: form.date || new Date().toISOString().split("T")[0],
-      site: form.site,
-      product: form.product,
+      date: orderForm.date,
+      site: orderForm.site,
+      product: orderForm.product,
       qty,
       salePrice: sale * qty,
       purchasePrice: purchase * qty,
       profit: (sale - purchase) * qty,
-      status: form.status,
+      status: orderForm.status,
     };
-    setOrders(prev => {
-      const updated = [newOrder, ...prev];
-      try { localStorage.setItem("vape_orders", JSON.stringify(updated)); } catch {}
-      return updated;
-    });
-    setShowForm(false);
-    setForm({ ...EMPTY_FORM });
-    onToast("Order logged successfully");
+    const updated = [newOrder, ...orders];
+    setOrders(updated); save("vape_orders", updated);
+    setShowOrderForm(false); setOrderForm({ ...EMPTY_ORDER });
+    onToast("Order logged");
   };
 
+  const addPurchase = () => {
+    if (!purchaseForm.product || !purchaseForm.unitCost) { onToast("Fill product and cost"); return; }
+    const qty = parseInt(purchaseForm.qty || "1");
+    const unit = parseInt(purchaseForm.unitCost);
+    const np: Purchase = {
+      id: "P" + String(purchases.length + 1).padStart(3, "0"),
+      date: purchaseForm.date,
+      supplier: purchaseForm.supplier || "—",
+      product: purchaseForm.product,
+      qty, unitCost: unit, totalCost: qty * unit,
+      site: purchaseForm.site,
+      notes: purchaseForm.notes,
+    };
+    const updated = [np, ...purchases];
+    setPurchases(updated); save("vape_purchases", updated);
+    setShowPurchaseForm(false); setPurchaseForm({ ...EMPTY_PURCHASE });
+    onToast("Purchase logged");
+  };
+
+  const addPayout = () => {
+    if (!payoutForm.recipient || !payoutForm.amount) { onToast("Fill recipient and amount"); return; }
+    const np: Payout = {
+      id: "O" + String(payouts.length + 1).padStart(3, "0"),
+      date: payoutForm.date,
+      recipient: payoutForm.recipient,
+      amount: parseInt(payoutForm.amount),
+      type: payoutForm.type,
+      notes: payoutForm.notes,
+    };
+    const updated = [np, ...payouts];
+    setPayouts(updated); save("vape_payouts", updated);
+    setShowPayoutForm(false); setPayoutForm({ ...EMPTY_PAYOUT });
+    onToast("Payout logged");
+  };
+
+  const deleteOrder = (id: string) => { const u = orders.filter(o => o.id !== id); setOrders(u); save("vape_orders", u); onToast("Deleted"); };
+  const deletePurchase = (id: string) => { const u = purchases.filter(p => p.id !== id); setPurchases(u); save("vape_purchases", u); onToast("Deleted"); };
+  const deletePayout = (id: string) => { const u = payouts.filter(p => p.id !== id); setPayouts(u); save("vape_payouts", u); onToast("Deleted"); };
+
   const resetAll = () => {
-    setOrders([]); try { localStorage.setItem("vape_orders", JSON.stringify([])); } catch {};
-    setShowReset(false);
-    onToast("All account data cleared");
+    setOrders([]); setPurchases([]); setPayouts([]);
+    save("vape_orders", []); save("vape_purchases", []); save("vape_payouts", []);
+    setShowReset(false); onToast("All data cleared");
+  };
+
+  const downloadCSV = (filename: string, headers: string[], rows: (string|number)[][]) => {
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = filename + "_" + new Date().toISOString().split("T")[0] + ".csv";
+    a.click(); onToast("Exported");
   };
 
   const filtered = filterSite === "all" ? orders : orders.filter(o => o.site === filterSite);
-  const totalSale = filtered.reduce((sum, o) => sum + o.salePrice, 0);
-  const totalPurchase = filtered.reduce((sum, o) => sum + o.purchasePrice, 0);
-  const totalProfit = filtered.reduce((sum, o) => sum + o.profit, 0);
-  const totalOrders = filtered.length;
-  const avgOrder = totalOrders > 0 ? Math.round(totalSale / totalOrders) : 0;
+  const totalSale = filtered.reduce((s, o) => s + o.salePrice, 0);
+  const totalProfit = filtered.reduce((s, o) => s + o.profit, 0);
+  const totalPurchases = purchases.reduce((s, p) => s + p.totalCost, 0);
+  const totalPayouts = payouts.reduce((s, p) => s + p.amount, 0);
   const margin = totalSale > 0 ? Math.round((totalProfit / totalSale) * 100) : 0;
 
-  const siteRevenue = { VIM: 0, TVH: 0, TVP: 0 };
-  const siteProfit = { VIM: 0, TVH: 0, TVP: 0 };
-  orders.forEach(o => {
-    siteRevenue[o.site as keyof typeof siteRevenue] += o.salePrice;
-    siteProfit[o.site as keyof typeof siteProfit] += o.profit;
-  });
-  const totalAll = Object.values(siteRevenue).reduce((a, b) => a + b, 0);
+  const siteRev: Record<string, number> = { VIM: 0, TVH: 0, TVP: 0 };
+  const sitePro: Record<string, number> = { VIM: 0, TVH: 0, TVP: 0 };
+  orders.forEach(o => { siteRev[o.site] = (siteRev[o.site] || 0) + o.salePrice; sitePro[o.site] = (sitePro[o.site] || 0) + o.profit; });
+  const totalAll = Object.values(siteRev).reduce((a, b) => a + b, 0);
 
-  const productSales: Record<string, { revenue: number; profit: number; qty: number }> = {};
-  filtered.forEach(o => {
-    if (!productSales[o.product]) productSales[o.product] = { revenue: 0, profit: 0, qty: 0 };
-    productSales[o.product].revenue += o.salePrice;
-    productSales[o.product].profit += o.profit;
-    productSales[o.product].qty += o.qty;
-  });
-  const topProducts = Object.entries(productSales).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5);
+  const badge = (text: string, bg: string, color: string) => (
+    <span style={{ background: bg, color, padding: "2px 8px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>{text}</span>
+  );
+
+  const delBtn = (onClick: () => void) => (
+    <button onClick={onClick} style={{ background: "#FEF2F2", border: "none", borderRadius: 6, padding: "4px 8px", color: "#E23744", cursor: "pointer", fontSize: 12 }}>✕</button>
+  );
+
+  const label = (text: string) => <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>{text}</label>;
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: "1.5rem" }}>
-        {[["orders","📋 Orders"],["purchases","🛒 Purchases"],["payouts","💸 Payouts"]].map(([id,label]) => (
-          <button key={id} onClick={() => setSubTab(id as "orders"|"purchases"|"payouts")} style={{ padding:"8px 20px", borderRadius:8, border:"1px solid "+(subTab===id?"#E23744":"#e0e0e0"), background:subTab===id?"#FEF2F2":"#fff", color:subTab===id?"#E23744":"#555", fontWeight:subTab===id?700:400, fontSize:13 }}>{label}</button>
-        ))}
-      </div>
-
-      {subTab === "orders" && <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Accounts & Sales</h2>
-          <p style={{ fontSize: 13, color: "#888" }}>Track orders, revenue and profit across all sites</p>
+          <p style={{ fontSize: 13, color: "#888" }}>Track orders, purchases and payouts</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={downloadExcel} style={{ background: "#fff", color: "#059669", border: "1px solid #059669", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13 }}>
-            ⬇ Export Excel
-          </button>
-          <button onClick={() => setShowReset(true)} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13 }}>
-            🗑 Reset Data
-          </button>
-          <button onClick={() => setShowForm(!showForm)} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, fontSize: 13 }}>
-            + Log Order
-          </button>
-        </div>
+        <button onClick={() => setShowReset(true)} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13 }}>🗑 Reset All Data</button>
       </div>
 
-      {subTab === "orders" && <div>
       {showReset && (
         <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#E23744" }}>Reset all account data?</div>
-            <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>This will permanently clear all orders. Cannot be undone.</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#E23744" }}>Reset all data?</div>
+            <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>Clears all orders, purchases and payouts. Cannot be undone.</div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={resetAll} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "6px 16px", fontWeight: 700, fontSize: 13 }}>Yes, reset</button>
-            <button onClick={() => setShowReset(false)} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: "6px 16px", fontWeight: 600, fontSize: 13, color: "#555" }}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-      {/* Add Order Form */}
-      {showForm && (
-        <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: "1rem" }}>Log new order</h3>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Date</label>
-              <input type="date" value={form.date} onChange={e => update("date", e.target.value)} />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Site</label>
-              <select value={form.site} onChange={e => update("site", e.target.value)}>
-                <option>VIM</option><option>TVH</option><option>TVP</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Product</label>
-              <select value={form.product} onChange={e => update("product", e.target.value)}>
-                {PRODUCTS.map(p => <option key={p}>{p}</option>)}
-              </select>
-            </div>
-
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Qty (default 1)</label>
-              <input type="number" value={form.qty} onChange={e => update("qty", e.target.value)} min="1" />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Sale price / unit (₹) *</label>
-              <input type="number" value={form.salePrice} onChange={e => update("salePrice", e.target.value)} placeholder="2399" />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Purchase price / unit (₹)</label>
-              <input type="number" value={form.purchasePrice} onChange={e => update("purchasePrice", e.target.value)} placeholder="1800" />
-            </div>
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Profit preview</label>
-              <div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: 13, fontWeight: 700, color: "#059669" }}>
-                ₹{form.salePrice && form.purchasePrice ? ((parseInt(form.salePrice) - parseInt(form.purchasePrice)) * parseInt(form.qty || "1")).toLocaleString("en-IN") : "—"}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-
-            <div>
-              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Status</label>
-              <select value={form.status} onChange={e => update("status", e.target.value)}>
-                <option>Delivered</option><option>Pending</option><option>Cancelled</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={addOrder} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontWeight: 700, fontSize: 13 }}>Save order</button>
-            <button onClick={() => { setShowForm(false); setForm({ ...EMPTY_FORM }); }} style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 20px", fontWeight: 600, fontSize: 13, color: "#555" }}>Cancel</button>
+            <button onClick={resetAll} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", fontWeight: 700, fontSize: 12 }}>Yes, reset all</button>
+            <button onClick={() => setShowReset(false)} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 6, padding: "5px 14px", fontSize: 12 }}>Cancel</button>
           </div>
         </div>
       )}
 
       {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: "1rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: "1.5rem" }}>
         {[
-          { label: "Total revenue", value: "₹" + totalAll.toLocaleString("en-IN"), sub: "All sites combined", color: "#0D0D0D" },
+          { label: "Total revenue", value: "₹" + totalAll.toLocaleString("en-IN"), sub: orders.length + " orders", color: "#0D0D0D" },
           { label: "Total profit", value: "₹" + totalProfit.toLocaleString("en-IN"), sub: margin + "% margin", color: "#059669" },
-          { label: "Total orders", value: String(orders.length), sub: "All sites", color: "#0D0D0D" },
-          { label: "VIM revenue", value: "₹" + siteRevenue.VIM.toLocaleString("en-IN"), sub: "Profit ₹" + siteProfit.VIM.toLocaleString("en-IN"), color: "#0D0D0D" },
-          { label: "TVH revenue", value: "₹" + siteRevenue.TVH.toLocaleString("en-IN"), sub: "Profit ₹" + siteProfit.TVH.toLocaleString("en-IN"), color: "#0D0D0D" },
-          { label: "TVP revenue", value: "₹" + siteRevenue.TVP.toLocaleString("en-IN"), sub: "Profit ₹" + siteProfit.TVP.toLocaleString("en-IN"), color: "#0D0D0D" },
-        ].map(card => (
-          <div key={card.label} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1rem" }}>
-            <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>{card.label}</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: card.color }}>{card.value}</div>
-            <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>{card.sub}</div>
+          { label: "Total outflow", value: "₹" + (totalPurchases + totalPayouts).toLocaleString("en-IN"), sub: "Purchases + payouts", color: "#E23744" },
+        ].map(c => (
+          <div key={c.label} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1rem" }}>
+            <div style={{ fontSize: 12, color: "#888", marginBottom: 4 }}>{c.label}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: c.color }}>{c.value}</div>
+            <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>{c.sub}</div>
           </div>
         ))}
       </div>
 
-      {/* Top Products + Revenue by Site */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: "1rem" }}>
-        <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem" }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: "1rem" }}>Top products</h3>
-          {topProducts.length === 0 ? <p style={{ fontSize: 13, color: "#888" }}>No data yet</p> : topProducts.map(([name, data], i) => (
-            <div key={name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 0", borderBottom: i < topProducts.length - 1 ? "1px solid #f0f0f0" : "none" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#E23744", width: 18 }}>#{i + 1}</span>
-                <div>
-                  <div style={{ fontSize: 13, color: "#0D0D0D" }}>{name}</div>
-                  <div style={{ fontSize: 11, color: "#aaa" }}>Qty: {data.qty}</div>
-                </div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>₹{data.revenue.toLocaleString("en-IN")}</div>
-                <div style={{ fontSize: 11, color: "#059669" }}>+₹{data.profit.toLocaleString("en-IN")}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem" }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: "1rem" }}>Revenue by site</h3>
-          {Object.entries(siteRevenue).map(([site, rev]) => (
-            <div key={site} style={{ marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 600 }}>{site}</span>
-                <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: 13, color: "#555" }}>₹{rev.toLocaleString("en-IN")}</span>
-                  <span style={{ fontSize: 11, color: "#059669", marginLeft: 6 }}>+₹{siteProfit[site as keyof typeof siteProfit].toLocaleString("en-IN")}</span>
-                </div>
-              </div>
-              <div style={{ background: "#f0f0f0", borderRadius: 4, height: 6 }}>
-                <div style={{ background: "#E23744", borderRadius: 4, height: 6, width: totalAll > 0 ? (rev / totalAll * 100) + "%" : "0%", transition: "width 0.3s" }} />
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Sub Tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: "1.5rem" }}>
+        {([["orders","📋 Orders"],["purchases","🛒 Purchases"],["payouts","💸 Payouts"]] as [string,string][]).map(([id, lbl]) => (
+          <button key={id} onClick={() => setSubTab(id as "orders"|"purchases"|"payouts")} style={{ padding: "8px 20px", borderRadius: 8, border: "1px solid " + (subTab === id ? "#E23744" : "#e0e0e0"), background: subTab === id ? "#FEF2F2" : "#fff", color: subTab === id ? "#E23744" : "#555", fontWeight: subTab === id ? 700 : 400, fontSize: 13 }}>{lbl}</button>
+        ))}
       </div>
 
-      {/* Orders Table */}
-      <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700 }}>Order history ({filtered.length})</h3>
-          <div style={{ display: "flex", gap: 8 }}>
-            {["all", "VIM", "TVH", "TVP"].map(s => (
-              <button key={s} onClick={() => setFilterSite(s)} style={{ padding: "4px 12px", borderRadius: 20, border: "1px solid " + (filterSite === s ? "#E23744" : "#e0e0e0"), background: filterSite === s ? "#FEF2F2" : "#fff", color: filterSite === s ? "#E23744" : "#555", fontSize: 12, fontWeight: filterSite === s ? 700 : 400 }}>
-                {s === "all" ? "All" : s}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {filtered.length === 0 ? (
-          <p style={{ fontSize: 13, color: "#888", textAlign: "center", padding: "2rem" }}>No orders yet. Click "+ Log Order" to add one.</p>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid #e0e0e0" }}>
-                  {["#","Date","Site","Product","Qty","Sale","Purchase","Profit","Status",""].map(h => (
-                    <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(order => (
-                  <tr key={order.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
-                    <td style={{ padding: "8px 10px", color: "#aaa" }}>{order.id}</td>
-                    <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>{order.date}</td>
-                    <td style={{ padding: "8px 10px" }}>
-                      <span style={{ background: "#FEF2F2", color: "#E23744", padding: "2px 8px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>{order.site}</span>
-                    </td>
-                    <td style={{ padding: "8px 10px", fontWeight: 500, whiteSpace: "nowrap" }}>{order.product}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "center" }}>{order.qty}</td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, whiteSpace: "nowrap" }}>₹{order.salePrice.toLocaleString("en-IN")}</td>
-                    <td style={{ padding: "8px 10px", color: "#888", whiteSpace: "nowrap" }}>₹{order.purchasePrice.toLocaleString("en-IN")}</td>
-                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#059669", whiteSpace: "nowrap" }}>₹{order.profit.toLocaleString("en-IN")}</td>
-                    <td style={{ padding: "8px 10px" }}>
-                      <span style={{ background: order.status === "Delivered" ? "#e8faf0" : order.status === "Pending" ? "#FFF9E6" : "#FEF2F2", color: order.status === "Delivered" ? "#059669" : order.status === "Pending" ? "#D97706" : "#E23744", padding: "2px 8px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>{order.status}</span>
-                    </td>
-                    <td style={{ padding: "8px 10px" }}>
-                      <button onClick={() => deleteOrder(order.id)} style={{ background: "#FEF2F2", border: "none", borderRadius: 6, padding: "4px 8px", color: "#E23744", cursor: "pointer", fontSize: 12 }}>✕</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-
-      </div>}
-
-      {subTab === "purchases" && (
+      {/* ORDERS */}
+      {subTab === "orders" && (
         <div>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
-            <h3 style={{ fontSize:14, fontWeight:700 }}>Stock purchases ({purchases.length})</h3>
-            <div style={{ display:"flex", gap:8 }}>
-              <button onClick={downloadPurchases} style={{ background:"#fff", color:"#059669", border:"1px solid #059669", borderRadius:8, padding:"6px 12px", fontWeight:600, fontSize:12 }}>⬇ Export</button>
-              <button onClick={() => { setPurchases([]); try{localStorage.setItem("vape_purchases",JSON.stringify([]))}catch{}; onToast("Purchases cleared"); }} style={{ background:"#fff", color:"#E23744", border:"1px solid #E23744", borderRadius:8, padding:"6px 12px", fontWeight:600, fontSize:12 }}>🗑 Reset</button>
-              <button onClick={() => setShowPForm(!showPForm)} style={{ background:"#E23744", color:"#fff", border:"none", borderRadius:8, padding:"6px 14px", fontWeight:700, fontSize:13 }}>+ Add</button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              {["all","VIM","TVH","TVP"].map(s => (
+                <button key={s} onClick={() => setFilterSite(s)} style={{ padding: "4px 12px", borderRadius: 20, border: "1px solid " + (filterSite === s ? "#E23744" : "#e0e0e0"), background: filterSite === s ? "#FEF2F2" : "#fff", color: filterSite === s ? "#E23744" : "#555", fontSize: 12, fontWeight: filterSite === s ? 700 : 400 }}>{s === "all" ? "All" : s}</button>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => downloadCSV("orders", ["#","Date","Site","Product","Qty","Sale","Purchase","Profit","Status"], filtered.map(o => [o.id,o.date,o.site,o.product,o.qty,o.salePrice,o.purchasePrice,o.profit,o.status]))} style={{ background: "#fff", color: "#059669", border: "1px solid #059669", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12 }}>⬇ Export</button>
+              <button onClick={() => setShowOrderForm(!showOrderForm)} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontWeight: 700, fontSize: 13 }}>+ Log Order</button>
             </div>
           </div>
-          {showPForm && (
-            <div style={{ background:"#fff", border:"1px solid #e0e0e0", borderRadius:12, padding:"1.25rem", marginBottom:"1rem" }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:12 }}>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Date</label><input type="date" value={pForm.date} onChange={e=>updatePF("date",e.target.value)} /></div>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Supplier</label><input value={pForm.supplier} onChange={e=>updatePF("supplier",e.target.value)} placeholder="Elfbar Distributor" /></div>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Site</label><select value={pForm.site} onChange={e=>updatePF("site",e.target.value)}><option>VIM</option><option>TVH</option><option>TVP</option><option>All</option></select></div>
+
+          {showOrderForm && (
+            <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <div>{label("Date")}<input type="date" value={orderForm.date} onChange={e => updateO("date", e.target.value)} /></div>
+                <div>{label("Site")}<select value={orderForm.site} onChange={e => updateO("site", e.target.value)}><option>VIM</option><option>TVH</option><option>TVP</option></select></div>
+                <div>{label("Product")}<select value={orderForm.product} onChange={e => updateO("product", e.target.value)}>{PRODUCTS.map(p => <option key={p}>{p}</option>)}</select></div>
+                <div>{label("Qty")}<input type="number" value={orderForm.qty} onChange={e => updateO("qty", e.target.value)} min="1" /></div>
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:12, marginBottom:12 }}>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Product *</label><input value={pForm.product} onChange={e=>updatePF("product",e.target.value)} placeholder="Elfbar Raya D1" /></div>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Qty</label><input type="number" value={pForm.qty} onChange={e=>updatePF("qty",e.target.value)} min="1" /></div>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Unit cost (₹) *</label><input type="number" value={pForm.unitCost} onChange={e=>updatePF("unitCost",e.target.value)} placeholder="1800" /></div>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Total</label><div style={{ padding:"8px 12px", background:"#FEF2F2", borderRadius:8, fontSize:13, fontWeight:700, color:"#E23744" }}>₹{pForm.unitCost&&pForm.qty?(parseInt(pForm.unitCost)*parseInt(pForm.qty||"1")).toLocaleString("en-IN"):"—"}</div></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <div>{label("Sale price / unit (₹)")}<input type="number" value={orderForm.salePrice} onChange={e => updateO("salePrice", e.target.value)} placeholder="2399" /></div>
+                <div>{label("Purchase price / unit (₹)")}<input type="number" value={orderForm.purchasePrice} onChange={e => updateO("purchasePrice", e.target.value)} placeholder="1800" /></div>
+                <div>{label("Profit preview")}<div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: 13, fontWeight: 700, color: "#059669" }}>₹{orderForm.salePrice && orderForm.purchasePrice ? ((parseInt(orderForm.salePrice) - parseInt(orderForm.purchasePrice)) * parseInt(orderForm.qty || "1")).toLocaleString("en-IN") : "—"}</div></div>
+                <div>{label("Status")}<select value={orderForm.status} onChange={e => updateO("status", e.target.value)}><option>Delivered</option><option>Pending</option><option>Cancelled</option></select></div>
               </div>
-              <div style={{ marginBottom:12 }}><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Notes</label><input value={pForm.notes} onChange={e=>updatePF("notes",e.target.value)} placeholder="Optional" /></div>
-              <div style={{ display:"flex", gap:8 }}>
-                <button onClick={addPurchase} style={{ background:"#E23744", color:"#fff", border:"none", borderRadius:8, padding:"8px 20px", fontWeight:700, fontSize:13 }}>Save</button>
-                <button onClick={() => setShowPForm(false)} style={{ background:"#f5f5f5", border:"1px solid #e0e0e0", borderRadius:8, padding:"8px 16px", fontSize:13 }}>Cancel</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={addOrder} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontWeight: 700, fontSize: 13 }}>Save</button>
+                <button onClick={() => { setShowOrderForm(false); setOrderForm({ ...EMPTY_ORDER }); }} style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 16px", fontSize: 13 }}>Cancel</button>
               </div>
             </div>
           )}
-          <div style={{ background:"#fff", border:"1px solid #e0e0e0", borderRadius:12, padding:"1.25rem" }}>
-            {purchases.length === 0 ? <p style={{ fontSize:13, color:"#888", textAlign:"center", padding:"2rem" }}>No purchases logged yet</p> : (
-              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-                <thead><tr style={{ borderBottom:"1px solid #e0e0e0" }}>{["#","Date","Supplier","Product","Qty","Unit Cost","Total","Site",""].map(h=><th key={h} style={{ padding:"8px 10px", textAlign:"left", fontWeight:600, color:"#888", fontSize:12 }}>{h}</th>)}</tr></thead>
-                <tbody>{purchases.map(p=><tr key={p.id} style={{ borderBottom:"1px solid #f5f5f5" }}>
-                  <td style={{ padding:"8px 10px", color:"#aaa" }}>{p.id}</td>
-                  <td style={{ padding:"8px 10px" }}>{p.date}</td>
-                  <td style={{ padding:"8px 10px" }}>{p.supplier}</td>
-                  <td style={{ padding:"8px 10px", fontWeight:500 }}>{p.product}</td>
-                  <td style={{ padding:"8px 10px", textAlign:"center" }}>{p.qty}</td>
-                  <td style={{ padding:"8px 10px" }}>₹{p.unitCost.toLocaleString("en-IN")}</td>
-                  <td style={{ padding:"8px 10px", fontWeight:600, color:"#E23744" }}>₹{p.totalCost.toLocaleString("en-IN")}</td>
-                  <td style={{ padding:"8px 10px" }}><span style={{ background:"#FEF2F2", color:"#E23744", padding:"2px 8px", borderRadius:100, fontSize:11, fontWeight:700 }}>{p.site}</span></td>
-                  <td style={{ padding:"8px 10px" }}><button onClick={()=>deletePurchase(p.id)} style={{ background:"#FEF2F2", border:"none", borderRadius:6, padding:"4px 8px", color:"#E23744", cursor:"pointer", fontSize:12 }}>✕</button></td>
-                </tr>)}</tbody>
+
+          <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem" }}>
+            {filtered.length === 0 ? <p style={{ fontSize: 13, color: "#888", textAlign: "center", padding: "2rem" }}>No orders yet</p> : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead><tr style={{ borderBottom: "1px solid #e0e0e0" }}>{["#","Date","Site","Product","Qty","Sale","Purchase","Profit","Status",""].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>)}</tr></thead>
+                  <tbody>{filtered.map(o => (
+                    <tr key={o.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                      <td style={{ padding: "8px 10px", color: "#aaa" }}>{o.id}</td>
+                      <td style={{ padding: "8px 10px" }}>{o.date}</td>
+                      <td style={{ padding: "8px 10px" }}>{badge(o.site, "#FEF2F2", "#E23744")}</td>
+                      <td style={{ padding: "8px 10px", fontWeight: 500 }}>{o.product}</td>
+                      <td style={{ padding: "8px 10px", textAlign: "center" }}>{o.qty}</td>
+                      <td style={{ padding: "8px 10px", fontWeight: 600 }}>₹{o.salePrice.toLocaleString("en-IN")}</td>
+                      <td style={{ padding: "8px 10px", color: "#888" }}>₹{o.purchasePrice.toLocaleString("en-IN")}</td>
+                      <td style={{ padding: "8px 10px", fontWeight: 600, color: "#059669" }}>₹{o.profit.toLocaleString("en-IN")}</td>
+                      <td style={{ padding: "8px 10px" }}>{badge(o.status, o.status==="Delivered"?"#e8faf0":o.status==="Pending"?"#FFF9E6":"#FEF2F2", o.status==="Delivered"?"#059669":o.status==="Pending"?"#D97706":"#E23744")}</td>
+                      <td style={{ padding: "8px 10px" }}>{delBtn(() => deleteOrder(o.id))}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* PURCHASES */}
+      {subTab === "purchases" && (
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700 }}>Stock purchases ({purchases.length}) — Total ₹{totalPurchases.toLocaleString("en-IN")}</h3>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => downloadCSV("purchases", ["#","Date","Supplier","Product","Qty","Unit Cost","Total","Site","Notes"], purchases.map(p => [p.id,p.date,p.supplier,p.product,p.qty,p.unitCost,p.totalCost,p.site,p.notes]))} style={{ background: "#fff", color: "#059669", border: "1px solid #059669", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12 }}>⬇ Export</button>
+              <button onClick={() => { setPurchases([]); save("vape_purchases", []); onToast("Purchases cleared"); }} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12 }}>🗑 Reset</button>
+              <button onClick={() => setShowPurchaseForm(!showPurchaseForm)} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontWeight: 700, fontSize: 13 }}>+ Add</button>
+            </div>
+          </div>
+
+          {showPurchaseForm && (
+            <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <div>{label("Date")}<input type="date" value={purchaseForm.date} onChange={e => updateP("date", e.target.value)} /></div>
+                <div>{label("Supplier")}<input value={purchaseForm.supplier} onChange={e => updateP("supplier", e.target.value)} placeholder="Elfbar Distributor" /></div>
+                <div>{label("Site")}<select value={purchaseForm.site} onChange={e => updateP("site", e.target.value)}><option>VIM</option><option>TVH</option><option>TVP</option><option>All</option></select></div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <div>{label("Product *")}<input value={purchaseForm.product} onChange={e => updateP("product", e.target.value)} placeholder="Elfbar Raya D1" /></div>
+                <div>{label("Qty")}<input type="number" value={purchaseForm.qty} onChange={e => updateP("qty", e.target.value)} min="1" /></div>
+                <div>{label("Unit cost (₹)")}<input type="number" value={purchaseForm.unitCost} onChange={e => updateP("unitCost", e.target.value)} placeholder="1800" /></div>
+                <div>{label("Total")}<div style={{ padding: "8px 12px", background: "#FEF2F2", borderRadius: 8, fontSize: 13, fontWeight: 700, color: "#E23744" }}>₹{purchaseForm.unitCost && purchaseForm.qty ? (parseInt(purchaseForm.unitCost) * parseInt(purchaseForm.qty || "1")).toLocaleString("en-IN") : "—"}</div></div>
+              </div>
+              <div style={{ marginBottom: 12 }}>{label("Notes")}<input value={purchaseForm.notes} onChange={e => updateP("notes", e.target.value)} placeholder="Optional" /></div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={addPurchase} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontWeight: 700, fontSize: 13 }}>Save</button>
+                <button onClick={() => { setShowPurchaseForm(false); setPurchaseForm({ ...EMPTY_PURCHASE }); }} style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 16px", fontSize: 13 }}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem" }}>
+            {purchases.length === 0 ? <p style={{ fontSize: 13, color: "#888", textAlign: "center", padding: "2rem" }}>No purchases logged yet</p> : (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead><tr style={{ borderBottom: "1px solid #e0e0e0" }}>{["#","Date","Supplier","Product","Qty","Unit Cost","Total","Site","Notes",""].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12 }}>{h}</th>)}</tr></thead>
+                <tbody>{purchases.map(p => (
+                  <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                    <td style={{ padding: "8px 10px", color: "#aaa" }}>{p.id}</td>
+                    <td style={{ padding: "8px 10px" }}>{p.date}</td>
+                    <td style={{ padding: "8px 10px" }}>{p.supplier}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 500 }}>{p.product}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "center" }}>{p.qty}</td>
+                    <td style={{ padding: "8px 10px" }}>₹{p.unitCost.toLocaleString("en-IN")}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#E23744" }}>₹{p.totalCost.toLocaleString("en-IN")}</td>
+                    <td style={{ padding: "8px 10px" }}>{badge(p.site, "#FEF2F2", "#E23744")}</td>
+                    <td style={{ padding: "8px 10px", color: "#888" }}>{p.notes || "—"}</td>
+                    <td style={{ padding: "8px 10px" }}>{delBtn(() => deletePurchase(p.id))}</td>
+                  </tr>
+                ))}</tbody>
               </table>
             )}
           </div>
         </div>
       )}
 
+      {/* PAYOUTS */}
       {subTab === "payouts" && (
         <div>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
-            <h3 style={{ fontSize:14, fontWeight:700 }}>Payouts ({payouts.length})</h3>
-            <div style={{ display:"flex", gap:8 }}>
-              <button onClick={downloadPayouts} style={{ background:"#fff", color:"#059669", border:"1px solid #059669", borderRadius:8, padding:"6px 12px", fontWeight:600, fontSize:12 }}>⬇ Export</button>
-              <button onClick={() => { setPayouts([]); try{localStorage.setItem("vape_payouts",JSON.stringify([]))}catch{}; onToast("Payouts cleared"); }} style={{ background:"#fff", color:"#E23744", border:"1px solid #E23744", borderRadius:8, padding:"6px 12px", fontWeight:600, fontSize:12 }}>🗑 Reset</button>
-              <button onClick={() => setShowOForm(!showOForm)} style={{ background:"#E23744", color:"#fff", border:"none", borderRadius:8, padding:"6px 14px", fontWeight:700, fontSize:13 }}>+ Add</button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700 }}>Payouts ({payouts.length}) — Total ₹{totalPayouts.toLocaleString("en-IN")}</h3>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => downloadCSV("payouts", ["#","Date","Recipient","Type","Amount","Notes"], payouts.map(p => [p.id,p.date,p.recipient,p.type,p.amount,p.notes]))} style={{ background: "#fff", color: "#059669", border: "1px solid #059669", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12 }}>⬇ Export</button>
+              <button onClick={() => { setPayouts([]); save("vape_payouts", []); onToast("Payouts cleared"); }} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12 }}>🗑 Reset</button>
+              <button onClick={() => setShowPayoutForm(!showPayoutForm)} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontWeight: 700, fontSize: 13 }}>+ Add</button>
             </div>
           </div>
-          {showOForm && (
-            <div style={{ background:"#fff", border:"1px solid #e0e0e0", borderRadius:12, padding:"1.25rem", marginBottom:"1rem" }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12, marginBottom:12 }}>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Date</label><input type="date" value={oForm.date} onChange={e=>updateOF("date",e.target.value)} /></div>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Recipient *</label><input value={oForm.recipient} onChange={e=>updateOF("recipient",e.target.value)} placeholder="Delivery Partner" /></div>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Type</label><select value={oForm.type} onChange={e=>updateOF("type",e.target.value)}>{PAYOUT_TYPES.map(t=><option key={t}>{t}</option>)}</select></div>
-                <div><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Amount (₹) *</label><input type="number" value={oForm.amount} onChange={e=>updateOF("amount",e.target.value)} placeholder="1500" /></div>
+
+          {showPayoutForm && (
+            <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <div>{label("Date")}<input type="date" value={payoutForm.date} onChange={e => updatePO("date", e.target.value)} /></div>
+                <div>{label("Recipient *")}<input value={payoutForm.recipient} onChange={e => updatePO("recipient", e.target.value)} placeholder="Delivery Partner" /></div>
+                <div>{label("Type")}<select value={payoutForm.type} onChange={e => updatePO("type", e.target.value)}>{PAYOUT_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>
+                <div>{label("Amount (₹) *")}<input type="number" value={payoutForm.amount} onChange={e => updatePO("amount", e.target.value)} placeholder="1500" /></div>
               </div>
-              <div style={{ marginBottom:12 }}><label style={{ fontSize:12, color:"#888", display:"block", marginBottom:4 }}>Notes</label><input value={oForm.notes} onChange={e=>updateOF("notes",e.target.value)} placeholder="Optional" /></div>
-              <div style={{ display:"flex", gap:8 }}>
-                <button onClick={addPayout} style={{ background:"#E23744", color:"#fff", border:"none", borderRadius:8, padding:"8px 20px", fontWeight:700, fontSize:13 }}>Save</button>
-                <button onClick={() => setShowOForm(false)} style={{ background:"#f5f5f5", border:"1px solid #e0e0e0", borderRadius:8, padding:"8px 16px", fontSize:13 }}>Cancel</button>
+              <div style={{ marginBottom: 12 }}>{label("Notes")}<input value={payoutForm.notes} onChange={e => updatePO("notes", e.target.value)} placeholder="Optional" /></div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={addPayout} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontWeight: 700, fontSize: 13 }}>Save</button>
+                <button onClick={() => { setShowPayoutForm(false); setPayoutForm({ ...EMPTY_PAYOUT }); }} style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 16px", fontSize: 13 }}>Cancel</button>
               </div>
             </div>
           )}
-          <div style={{ background:"#fff", border:"1px solid #e0e0e0", borderRadius:12, padding:"1.25rem" }}>
-            {payouts.length === 0 ? <p style={{ fontSize:13, color:"#888", textAlign:"center", padding:"2rem" }}>No payouts logged yet</p> : (
-              <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-                <thead><tr style={{ borderBottom:"1px solid #e0e0e0" }}>{["#","Date","Recipient","Type","Amount","Notes",""].map(h=><th key={h} style={{ padding:"8px 10px", textAlign:"left", fontWeight:600, color:"#888", fontSize:12 }}>{h}</th>)}</tr></thead>
-                <tbody>{payouts.map(p=><tr key={p.id} style={{ borderBottom:"1px solid #f5f5f5" }}>
-                  <td style={{ padding:"8px 10px", color:"#aaa" }}>{p.id}</td>
-                  <td style={{ padding:"8px 10px" }}>{p.date}</td>
-                  <td style={{ padding:"8px 10px", fontWeight:500 }}>{p.recipient}</td>
-                  <td style={{ padding:"8px 10px" }}><span style={{ background:"#FFF9E6", color:"#D97706", padding:"2px 8px", borderRadius:100, fontSize:11, fontWeight:700 }}>{p.type}</span></td>
-                  <td style={{ padding:"8px 10px", fontWeight:600, color:"#D97706" }}>₹{p.amount.toLocaleString("en-IN")}</td>
-                  <td style={{ padding:"8px 10px", color:"#888" }}>{p.notes||"—"}</td>
-                  <td style={{ padding:"8px 10px" }}><button onClick={()=>deletePayout(p.id)} style={{ background:"#FEF2F2", border:"none", borderRadius:6, padding:"4px 8px", color:"#E23744", cursor:"pointer", fontSize:12 }}>✕</button></td>
-                </tr>)}</tbody>
+
+          <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem" }}>
+            {payouts.length === 0 ? <p style={{ fontSize: 13, color: "#888", textAlign: "center", padding: "2rem" }}>No payouts logged yet</p> : (
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead><tr style={{ borderBottom: "1px solid #e0e0e0" }}>{["#","Date","Recipient","Type","Amount","Notes",""].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12 }}>{h}</th>)}</tr></thead>
+                <tbody>{payouts.map(p => (
+                  <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
+                    <td style={{ padding: "8px 10px", color: "#aaa" }}>{p.id}</td>
+                    <td style={{ padding: "8px 10px" }}>{p.date}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 500 }}>{p.recipient}</td>
+                    <td style={{ padding: "8px 10px" }}>{badge(p.type, "#FFF9E6", "#D97706")}</td>
+                    <td style={{ padding: "8px 10px", fontWeight: 600, color: "#D97706" }}>₹{p.amount.toLocaleString("en-IN")}</td>
+                    <td style={{ padding: "8px 10px", color: "#888" }}>{p.notes || "—"}</td>
+                    <td style={{ padding: "8px 10px" }}>{delBtn(() => deletePayout(p.id))}</td>
+                  </tr>
+                ))}</tbody>
               </table>
             )}
           </div>
