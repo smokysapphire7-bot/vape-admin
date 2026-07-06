@@ -5,6 +5,7 @@ import BannerEditor from "./components/BannerEditor";
 import ProductAdder from "./components/ProductAdder";
 import DeployPanel from "./components/DeployPanel";
 import Accounts from "./components/Accounts";
+import Purchases from "./components/Purchases";
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "vapeadmin2026";
 
@@ -15,7 +16,7 @@ const HOOKS = {
 };
 
 export default function AdminPanel() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(() => { try { return localStorage.getItem("vape_admin_auth") === "true"; } catch { return false; } });
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   const [activeTab, setActiveTab] = useState("prices");
@@ -23,7 +24,7 @@ export default function AdminPanel() {
   const [deployLog, setDeployLog] = useState<string[]>([]);
 
   const login = () => {
-    if (password === ADMIN_PASSWORD) { setLoggedIn(true); setError(false); }
+    if (password === ADMIN_PASSWORD) { setLoggedIn(true); setError(false); try { localStorage.setItem("vape_admin_auth", "true"); } catch {} }
     else setError(true);
   };
 
@@ -77,6 +78,7 @@ export default function AdminPanel() {
   const tabs = [
     { id: "prices", label: "💰 Prices" },
     { id: "accounts", label: "📊 Accounts" },
+    { id: "purchases", label: "🛒 Purchases" },
     { id: "banner", label: "📢 Banner" },
     { id: "product", label: "➕ Add Product" },
     { id: "deploy", label: "🚀 Deploy" },
@@ -89,6 +91,9 @@ export default function AdminPanel() {
         <div style={{ padding: "0 1rem 1.5rem", borderBottom: "1px solid #f0f0f0", marginBottom: "1rem" }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: "#0D0D0D" }}>VAPE <span style={{ color: "#E23744" }}>ADMIN</span></div>
           <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>Network Control Panel</div>
+        </div>
+        <div style={{ padding: "0 1rem", marginBottom: "0.5rem" }}>
+          <button onClick={() => { setLoggedIn(false); try { localStorage.removeItem("vape_admin_auth"); } catch {} }} style={{ fontSize: 11, color: "#888", background: "none", border: "none", cursor: "pointer", padding: 0 }}>Sign out</button>
         </div>
         {tabs.map(tab => (
           <div key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -112,6 +117,7 @@ export default function AdminPanel() {
         {activeTab === "product" && <ProductAdder onDeploy={deployAll} onToast={showToast} />}
         {activeTab === "deploy" && <DeployPanel onDeployAll={deployAll} onDeploySingle={deploySingle} deployLog={deployLog} />}
         {activeTab === "accounts" && <Accounts onToast={showToast} />}
+        {activeTab === "purchases" && <Purchases onToast={showToast} />}
       </div>
 
       {/* Toast */}

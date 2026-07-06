@@ -32,7 +32,7 @@ const PRODUCTS = [
   "Caliburn G4 Pro","Caliburn G5 Lite","Caliburn GK2",
 ];
 
-const EMPTY_FORM = { site: "VIM", product: "Elfbar Raya D1", customerName: "", qty: "1", salePrice: "", purchasePrice: "", area: "", status: "Delivered" };
+const EMPTY_FORM = { site: "VIM", product: "Elfbar Raya D1", customerName: "", qty: "1", salePrice: "", purchasePrice: "", area: "", status: "Delivered", date: new Date().toISOString().split("T")[0] };
 
 type Props = { onToast: (msg: string) => void; };
 
@@ -52,7 +52,7 @@ export default function Accounts({ onToast }: Props) {
     const qty = parseInt(form.qty || "1");
     const newOrder: Order = {
       id: String(orders.length + 1).padStart(3, "0"),
-      date: new Date().toISOString().split("T")[0],
+      date: form.date || new Date().toISOString().split("T")[0],
       site: form.site,
       product: form.product,
       customerName: form.customerName || "—",
@@ -136,7 +136,11 @@ export default function Accounts({ onToast }: Props) {
         <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: "1rem" }}>Log new order</h3>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Date</label>
+              <input type="date" value={form.date} onChange={e => update("date", e.target.value)} />
+            </div>
             <div>
               <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 4 }}>Site</label>
               <select value={form.site} onChange={e => update("site", e.target.value)}>
