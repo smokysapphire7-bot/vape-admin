@@ -37,7 +37,12 @@ const EMPTY_FORM = { site: "VIM", product: "Elfbar Raya D1", customerName: "", q
 type Props = { onToast: (msg: string) => void; };
 
 export default function Accounts({ onToast }: Props) {
-  const [orders, setOrders] = useState<Order[]>(SAMPLE_ORDERS);
+  const [orders, setOrders] = useState<Order[]>(() => {
+    try {
+      const saved = localStorage.getItem("vape_orders");
+      return saved ? JSON.parse(saved) : SAMPLE_ORDERS;
+    } catch { return SAMPLE_ORDERS; }
+  });
   const [filterSite, setFilterSite] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -63,14 +68,18 @@ export default function Accounts({ onToast }: Props) {
       area: form.area,
       status: form.status,
     };
-    setOrders(prev => [newOrder, ...prev]);
+    setOrders(prev => {
+      const updated = [newOrder, ...prev];
+      try { localStorage.setItem("vape_orders", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     setShowForm(false);
     setForm({ ...EMPTY_FORM });
     onToast("Order logged successfully");
   };
 
   const resetAll = () => {
-    setOrders([]);
+    setOrders([]); try { localStorage.setItem("vape_orders", JSON.stringify([])); } catch {};
     setShowReset(false);
     onToast("All account data cleared");
   };

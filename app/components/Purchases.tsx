@@ -41,8 +41,18 @@ type Props = { onToast: (msg: string) => void; };
 
 export default function Purchases({ onToast }: Props) {
   const [activeTab, setActiveTab] = useState<"purchases" | "payouts">("purchases");
-  const [purchases, setPurchases] = useState<Purchase[]>(SAMPLE_PURCHASES);
-  const [payouts, setPayouts] = useState<Payout[]>(SAMPLE_PAYOUTS);
+  const [purchases, setPurchases] = useState<Purchase[]>(() => {
+    try {
+      const saved = localStorage.getItem("vape_purchases");
+      return saved ? JSON.parse(saved) : SAMPLE_PURCHASES;
+    } catch { return SAMPLE_PURCHASES; }
+  });
+  const [payouts, setPayouts] = useState<Payout[]>(() => {
+    try {
+      const saved = localStorage.getItem("vape_payouts");
+      return saved ? JSON.parse(saved) : SAMPLE_PAYOUTS;
+    } catch { return SAMPLE_PAYOUTS; }
+  });
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const [purchaseForm, setPurchaseForm] = useState({ ...EMPTY_PURCHASE });
@@ -66,7 +76,11 @@ export default function Purchases({ onToast }: Props) {
       site: purchaseForm.site,
       notes: purchaseForm.notes,
     };
-    setPurchases(prev => [newP, ...prev]);
+    setPurchases(prev => {
+      const updated = [newP, ...prev];
+      try { localStorage.setItem("vape_purchases", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     setShowPurchaseForm(false);
     setPurchaseForm({ ...EMPTY_PURCHASE });
     onToast("Purchase logged");
@@ -82,7 +96,11 @@ export default function Purchases({ onToast }: Props) {
       type: payoutForm.type,
       notes: payoutForm.notes,
     };
-    setPayouts(prev => [newO, ...prev]);
+    setPayouts(prev => {
+      const updated = [newO, ...prev];
+      try { localStorage.setItem("vape_payouts", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     setShowPayoutForm(false);
     setPayoutForm({ ...EMPTY_PAYOUT });
     onToast("Payout logged");
@@ -140,7 +158,7 @@ export default function Purchases({ onToast }: Props) {
             <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13, color: "#E23744", fontWeight: 600 }}>Reset all purchase data?</span>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => { setPurchases([]); setShowResetP(false); onToast("Purchases cleared"); }} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", fontWeight: 700, fontSize: 12 }}>Yes</button>
+                <button onClick={() => { setPurchases([]); setShowResetP(false); try { localStorage.setItem("vape_purchases", JSON.stringify([])); } catch {} onToast("Purchases cleared"); }} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", fontWeight: 700, fontSize: 12 }}>Yes</button>
                 <button onClick={() => setShowResetP(false)} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 6, padding: "5px 14px", fontSize: 12 }}>Cancel</button>
               </div>
             </div>
@@ -244,7 +262,7 @@ export default function Purchases({ onToast }: Props) {
             <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 13, color: "#E23744", fontWeight: 600 }}>Reset all payout data?</span>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => { setPayouts([]); setShowResetO(false); onToast("Payouts cleared"); }} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", fontWeight: 700, fontSize: 12 }}>Yes</button>
+                <button onClick={() => { setPayouts([]); setShowResetO(false); try { localStorage.setItem("vape_payouts", JSON.stringify([])); } catch {} onToast("Payouts cleared"); }} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 6, padding: "5px 14px", fontWeight: 700, fontSize: 12 }}>Yes</button>
                 <button onClick={() => setShowResetO(false)} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 6, padding: "5px 14px", fontSize: 12 }}>Cancel</button>
               </div>
             </div>
