@@ -5,7 +5,6 @@ import BannerEditor from "./components/BannerEditor";
 import ProductAdder from "./components/ProductAdder";
 import DeployPanel from "./components/DeployPanel";
 import Accounts from "./components/Accounts";
-import Purchases from "./components/Purchases";
 
 const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "vapeadmin2026";
 
@@ -78,7 +77,6 @@ export default function AdminPanel() {
   const tabs = [
     { id: "prices", label: "💰 Prices" },
     { id: "accounts", label: "📊 Accounts" },
-    { id: "purchases", label: "🛒 Purchases" },
     { id: "banner", label: "📢 Banner" },
     { id: "product", label: "➕ Add Product" },
     { id: "deploy", label: "🚀 Deploy" },
@@ -117,7 +115,6 @@ export default function AdminPanel() {
         {activeTab === "product" && <ProductAdder onDeploy={deployAll} onToast={showToast} />}
         {activeTab === "deploy" && <DeployPanel onDeployAll={deployAll} onDeploySingle={deploySingle} deployLog={deployLog} />}
         {activeTab === "accounts" && <Accounts onToast={showToast} />}
-        {activeTab === "purchases" && <Purchases onToast={showToast} />}
       </div>
 
       {/* Toast */}
