@@ -4,6 +4,7 @@ import PriceEditor from "./components/PriceEditor";
 import BannerEditor from "./components/BannerEditor";
 import ProductAdder from "./components/ProductAdder";
 import DeployPanel from "./components/DeployPanel";
+import Accounts from "./components/Accounts";
 
 const ADMIN_PASSWORD = "vapeadmin2026";
 
@@ -75,6 +76,7 @@ export default function AdminPanel() {
 
   const tabs = [
     { id: "prices", label: "💰 Prices" },
+    { id: "accounts", label: "📊 Accounts" },
     { id: "banner", label: "📢 Banner" },
     { id: "product", label: "➕ Add Product" },
     { id: "deploy", label: "🚀 Deploy" },
@@ -109,6 +111,7 @@ export default function AdminPanel() {
         {activeTab === "banner" && <BannerEditor onDeploy={deployAll} onToast={showToast} />}
         {activeTab === "product" && <ProductAdder onDeploy={deployAll} onToast={showToast} />}
         {activeTab === "deploy" && <DeployPanel onDeployAll={deployAll} onDeploySingle={deploySingle} deployLog={deployLog} />}
+        {activeTab === "accounts" && <Accounts onToast={showToast} />}
       </div>
 
       {/* Toast */}
