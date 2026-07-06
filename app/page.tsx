@@ -6,12 +6,12 @@ import ProductAdder from "./components/ProductAdder";
 import DeployPanel from "./components/DeployPanel";
 import Accounts from "./components/Accounts";
 
-const ADMIN_PASSWORD = "vapeadmin2026";
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "vapeadmin2026";
 
 const HOOKS = {
-  vim: "https://api.vercel.com/v1/integrations/deploy/prj_DztSucrfl8xj2hXM0FCQ8UYSCzY8/EyrBYs1dXu",
-  tvh: "https://api.vercel.com/v1/integrations/deploy/prj_rwE5QerQHcc5XAloSaLfkzftXVE2/mCk0le6DNS",
-  tvp: "https://api.vercel.com/v1/integrations/deploy/prj_HnACitX9NwNfnR6zRyuLFA7clqM3/JQYTfUzZmo",
+  vim: process.env.NEXT_PUBLIC_HOOK_VIM || "",
+  tvh: process.env.NEXT_PUBLIC_HOOK_TVH || "",
+  tvp: process.env.NEXT_PUBLIC_HOOK_TVP || "",
 };
 
 export default function AdminPanel() {
