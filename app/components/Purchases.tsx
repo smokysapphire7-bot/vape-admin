@@ -61,6 +61,48 @@ export default function Purchases({ onToast }: Props) {
   const [showResetO, setShowResetO] = useState(false);
 
   const updateP = (key: string, val: string) => setPurchaseForm(prev => ({ ...prev, [key]: val }));
+
+  const deletePurchase = (id: string) => {
+    setPurchases(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      try { localStorage.setItem("vape_purchases", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    onToast("Purchase deleted");
+  };
+
+  const deletePayout = (id: string) => {
+    setPayouts(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      try { localStorage.setItem("vape_payouts", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    onToast("Payout deleted");
+  };
+
+  const downloadPurchases = () => {
+    const headers = ["#","Date","Supplier","Product","Qty","Unit Cost","Total","Site","Notes"];
+    const rows = purchases.map(p => [p.id, p.date, p.supplier, p.product, p.qty, p.unitCost, p.totalCost, p.site, p.notes]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "vape_purchases_" + new Date().toISOString().split("T")[0] + ".csv";
+    a.click(); URL.revokeObjectURL(url);
+    onToast("Purchases exported");
+  };
+
+  const downloadPayouts = () => {
+    const headers = ["#","Date","Recipient","Type","Amount","Notes"];
+    const rows = payouts.map(p => [p.id, p.date, p.recipient, p.type, p.amount, p.notes]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "vape_payouts_" + new Date().toISOString().split("T")[0] + ".csv";
+    a.click(); URL.revokeObjectURL(url);
+    onToast("Payouts exported");
+  };
   const updateO = (key: string, val: string) => setPayoutForm(prev => ({ ...prev, [key]: val }));
 
   const addPurchase = () => {
@@ -149,6 +191,7 @@ export default function Purchases({ onToast }: Props) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
             <h3 style={{ fontSize: 14, fontWeight: 700 }}>Stock purchases ({purchases.length})</h3>
             <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={downloadPurchases} style={{ background: "#fff", color: "#059669", border: "1px solid #059669", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12 }}>⬇ Export</button>
               <button onClick={() => setShowResetP(true)} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12 }}>🗑 Reset</button>
               <button onClick={() => setShowPurchaseForm(!showPurchaseForm)} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontWeight: 700, fontSize: 13 }}>+ Add Purchase</button>
             </div>
@@ -219,7 +262,7 @@ export default function Purchases({ onToast }: Props) {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid #e0e0e0" }}>
-                    {["#","Date","Supplier","Product","Qty","Unit Cost","Total","Site","Notes"].map(h => (
+                    {["#","Date","Supplier","Product","Qty","Unit Cost","Total","Site","Notes",""].map(h => (
                       <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
@@ -238,6 +281,9 @@ export default function Purchases({ onToast }: Props) {
                         <span style={{ background: "#FEF2F2", color: "#E23744", padding: "2px 8px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>{p.site}</span>
                       </td>
                       <td style={{ padding: "8px 10px", color: "#888" }}>{p.notes || "—"}</td>
+                      <td style={{ padding: "8px 10px" }}>
+                        <button onClick={() => deletePurchase(p.id)} style={{ background: "#FEF2F2", border: "none", borderRadius: 6, padding: "4px 8px", color: "#E23744", cursor: "pointer", fontSize: 12 }}>✕</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -253,6 +299,7 @@ export default function Purchases({ onToast }: Props) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
             <h3 style={{ fontSize: 14, fontWeight: 700 }}>Payouts ({payouts.length})</h3>
             <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={downloadPayouts} style={{ background: "#fff", color: "#059669", border: "1px solid #059669", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12 }}>⬇ Export</button>
               <button onClick={() => setShowResetO(true)} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12 }}>🗑 Reset</button>
               <button onClick={() => setShowPayoutForm(!showPayoutForm)} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontWeight: 700, fontSize: 13 }}>+ Add Payout</button>
             </div>
@@ -307,7 +354,7 @@ export default function Purchases({ onToast }: Props) {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid #e0e0e0" }}>
-                    {["#","Date","Recipient","Type","Amount","Notes"].map(h => (
+                    {["#","Date","Recipient","Type","Amount","Notes",""].map(h => (
                       <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12 }}>{h}</th>
                     ))}
                   </tr>
@@ -323,6 +370,9 @@ export default function Purchases({ onToast }: Props) {
                       </td>
                       <td style={{ padding: "8px 10px", fontWeight: 600, color: "#D97706" }}>₹{p.amount.toLocaleString("en-IN")}</td>
                       <td style={{ padding: "8px 10px", color: "#888" }}>{p.notes || "—"}</td>
+                      <td style={{ padding: "8px 10px" }}>
+                        <button onClick={() => deletePayout(p.id)} style={{ background: "#FEF2F2", border: "none", borderRadius: 6, padding: "4px 8px", color: "#E23744", cursor: "pointer", fontSize: 12 }}>✕</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

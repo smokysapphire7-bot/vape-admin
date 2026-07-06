@@ -50,6 +50,27 @@ export default function Accounts({ onToast }: Props) {
 
   const update = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
 
+  const deleteOrder = (id: string) => {
+    setOrders(prev => {
+      const updated = prev.filter(o => o.id !== id);
+      try { localStorage.setItem("vape_orders", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    onToast("Order deleted");
+  };
+
+  const downloadExcel = () => {
+    const headers = ["#","Date","Site","Customer","Product","Qty","Sale Price","Purchase Price","Profit","Area","Status"];
+    const rows = filtered.map(o => [o.id, o.date, o.site, o.customerName, o.product, o.qty, o.salePrice, o.purchasePrice, o.profit, o.area, o.status]);
+    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "vape_orders_" + new Date().toISOString().split("T")[0] + ".csv";
+    a.click(); URL.revokeObjectURL(url);
+    onToast("Orders exported");
+  };
+
   const addOrder = () => {
     if (!form.salePrice || !form.area) { onToast("Please fill sale price and area"); return; }
     const sale = parseInt(form.salePrice);
@@ -117,6 +138,9 @@ export default function Accounts({ onToast }: Props) {
           <p style={{ fontSize: 13, color: "#888" }}>Track orders, revenue and profit across all sites</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={downloadExcel} style={{ background: "#fff", color: "#059669", border: "1px solid #059669", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13 }}>
+            ⬇ Export Excel
+          </button>
           <button onClick={() => setShowReset(true)} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13 }}>
             🗑 Reset Data
           </button>
@@ -287,7 +311,7 @@ export default function Accounts({ onToast }: Props) {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #e0e0e0" }}>
-                  {["#","Date","Site","Customer","Product","Qty","Sale","Purchase","Profit","Area","Status"].map(h => (
+                  {["#","Date","Site","Customer","Product","Qty","Sale","Purchase","Profit","Area","Status",""].map(h => (
                     <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -309,6 +333,9 @@ export default function Accounts({ onToast }: Props) {
                     <td style={{ padding: "8px 10px", color: "#555", whiteSpace: "nowrap" }}>{order.area}</td>
                     <td style={{ padding: "8px 10px" }}>
                       <span style={{ background: order.status === "Delivered" ? "#e8faf0" : order.status === "Pending" ? "#FFF9E6" : "#FEF2F2", color: order.status === "Delivered" ? "#059669" : order.status === "Pending" ? "#D97706" : "#E23744", padding: "2px 8px", borderRadius: 100, fontSize: 11, fontWeight: 700 }}>{order.status}</span>
+                    </td>
+                    <td style={{ padding: "8px 10px" }}>
+                      <button onClick={() => deleteOrder(order.id)} style={{ background: "#FEF2F2", border: "none", borderRadius: 6, padding: "4px 8px", color: "#E23744", cursor: "pointer", fontSize: 12 }}>✕</button>
                     </td>
                   </tr>
                 ))}
