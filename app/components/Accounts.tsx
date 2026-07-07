@@ -151,11 +151,86 @@ export default function Accounts({ onToast }: Props) {
   };
 
   const downloadCSV = (filename: string, headers: string[], rows: (string|number)[][]) => {
-    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
+    const today = new Date().toISOString().split("T")[0];
+    const totalRow: (string|number)[] = [];
+
+    // Build summary block
+    const totalOrders = orders.length;
+    const totalSaleAmt = orders.reduce((s,o) => s+o.salePrice, 0);
+    const totalPurchaseAmt = orders.reduce((s,o) => s+o.purchasePrice, 0);
+    const totalProfitAmt = orders.reduce((s,o) => s+o.profit, 0);
+    const ownOrders = orders.filter(o => o.stockType === "own");
+    const shopOrders = orders.filter(o => o.stockType === "shop");
+    const ownProfit = ownOrders.reduce((s,o) => s+o.profit, 0);
+    const shopProfit = shopOrders.reduce((s,o) => s+o.profit, 0);
+    const totalPurchasesAmt = purchases.reduce((s,p) => s+p.totalCost, 0);
+    const totalPayoutsAmt = payouts.reduce((s,p) => s+p.amount, 0);
+    const netProfit = totalProfitAmt - totalPayoutsAmt;
+
+    const siteBreakdown = ["VIM","TVH","TVP","VDB"].map(site => {
+      const siteOrders = orders.filter(o => o.site === site);
+      const city = site === "VIM" ? "Mumbai" : site === "TVH" ? "Hyderabad" : site === "TVP" ? "Pune" : "Bangalore";
+      return `${city}: Sales Rs.${siteOrders.reduce((s,o)=>s+o.salePrice,0).toLocaleString("en-IN")} | Profit Rs.${siteOrders.reduce((s,o)=>s+o.profit,0).toLocaleString("en-IN")} | Orders ${siteOrders.length}`;
+    }).join(" || ");
+
+    const productBreakdown: Record<string, {qty:number,revenue:number,profit:number}> = {};
+    orders.forEach(o => {
+      if (!productBreakdown[o.product]) productBreakdown[o.product] = {qty:0,revenue:0,profit:0};
+      productBreakdown[o.product].qty += o.qty;
+      productBreakdown[o.product].revenue += o.salePrice;
+      productBreakdown[o.product].profit += o.profit;
+    });
+    const topProducts = Object.entries(productBreakdown).sort((a,b)=>b[1].revenue-a[1].revenue).slice(0,5);
+
+    const summaryLines = [
+      ["VAPE NETWORK — DETAILED REPORT"],
+      [`Generated: ${today}`],
+      [""],
+      ["=== OVERALL SUMMARY ==="],
+      [`Total Orders,${totalOrders}`],
+      [`Total Sales Revenue,Rs.${totalSaleAmt.toLocaleString("en-IN")}`],
+      [`Total Purchase Cost,Rs.${totalPurchaseAmt.toLocaleString("en-IN")}`],
+      [`Gross Profit,Rs.${totalProfitAmt.toLocaleString("en-IN")}`],
+      [`Total Payouts (Expenses),Rs.${totalPayoutsAmt.toLocaleString("en-IN")}`],
+      [`Net Profit,Rs.${netProfit.toLocaleString("en-IN")}`],
+      [`Total Stock Purchases,Rs.${totalPurchasesAmt.toLocaleString("en-IN")}`],
+      [`Profit Margin,${totalSaleAmt > 0 ? Math.round((totalProfitAmt/totalSaleAmt)*100) : 0}%`],
+      [""],
+      ["=== STOCK TYPE BREAKDOWN ==="],
+      [`Own Stock Orders,${ownOrders.length},Revenue Rs.${ownOrders.reduce((s,o)=>s+o.salePrice,0).toLocaleString("en-IN")},Profit Rs.${ownProfit.toLocaleString("en-IN")}`],
+      [`Shop Stock Orders,${shopOrders.length},Revenue Rs.${shopOrders.reduce((s,o)=>s+o.salePrice,0).toLocaleString("en-IN")},Profit Rs.${shopProfit.toLocaleString("en-IN")}`],
+      [""],
+      ["=== CITY BREAKDOWN ==="],
+      ...["VIM","TVH","TVP","VDB"].map(site => {
+        const city = site==="VIM"?"Mumbai":site==="TVH"?"Hyderabad":site==="TVP"?"Pune":"Bangalore";
+        const so = orders.filter(o=>o.site===site);
+        return [`${city},Orders ${so.length},Sales Rs.${so.reduce((s,o)=>s+o.salePrice,0).toLocaleString("en-IN")},Profit Rs.${so.reduce((s,o)=>s+o.profit,0).toLocaleString("en-IN")}`];
+      }),
+      [""],
+      ["=== TOP 5 PRODUCTS ==="],
+      ...topProducts.map(([name,data]) => [`${name},Qty ${data.qty},Revenue Rs.${data.revenue.toLocaleString("en-IN")},Profit Rs.${data.profit.toLocaleString("en-IN")}`]),
+      [""],
+      ["=== EXPENSES BREAKDOWN ==="],
+      [`Delivery/Operations,Rs.${payouts.filter(p=>p.type==="Delivery Cost").reduce((s,p)=>s+p.amount,0).toLocaleString("en-IN")}`],
+      [`Hosting,Rs.${payouts.filter(p=>p.type==="Hosting").reduce((s,p)=>s+p.amount,0).toLocaleString("en-IN")}`],
+      [`Salary,Rs.${payouts.filter(p=>p.type==="Salary").reduce((s,p)=>s+p.amount,0).toLocaleString("en-IN")}`],
+      [`Marketing,Rs.${payouts.filter(p=>p.type==="Marketing").reduce((s,p)=>s+p.amount,0).toLocaleString("en-IN")}`],
+      [`Other,Rs.${payouts.filter(p=>p.type==="Other").reduce((s,p)=>s+p.amount,0).toLocaleString("en-IN")}`],
+      [""],
+      ["=== ORDER DETAILS ==="],
+      headers,
+      ...rows,
+      [""],
+      ["=== TOTALS ==="],
+      [`,,,,Total Qty,${rows.reduce((s,r)=>s+(Number(r[4])||0),0)},Total Sale Rs.${totalSaleAmt.toLocaleString("en-IN")},Total Purchase Rs.${totalPurchaseAmt.toLocaleString("en-IN")},Total Profit Rs.${totalProfitAmt.toLocaleString("en-IN")}`],
+    ];
+
+    const csv = summaryLines.map(r => Array.isArray(r) ? r.join(",") : r).join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    a.download = filename + "_" + new Date().toISOString().split("T")[0] + ".csv";
-    a.click(); onToast("Exported");
+    a.download = "vape_network_report_" + today + ".csv";
+    a.click();
+    onToast("Full report downloaded");
   };
 
   const filtered = filterSite === "all" ? orders : orders.filter(o => o.site === filterSite);
