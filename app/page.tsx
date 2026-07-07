@@ -83,39 +83,31 @@ export default function AdminPanel() {
   ];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      {/* Sidebar */}
-      <div style={{ width: 220, background: "#fff", borderRight: "1px solid #e0e0e0", padding: "1.5rem 0", position: "fixed", height: "100vh", top: 0, left: 0 }}>
-        <div style={{ padding: "0 1rem 1.5rem", borderBottom: "1px solid #f0f0f0", marginBottom: "1rem" }}>
-          <div style={{ fontWeight: 800, fontSize: 15, color: "#0D0D0D" }}>VAPE <span style={{ color: "#E23744" }}>ADMIN</span></div>
-          <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>Network Control Panel</div>
-        </div>
-        <div style={{ padding: "0 1rem", marginBottom: "0.5rem" }}>
-          <button onClick={() => { setLoggedIn(false); try { localStorage.removeItem("vape_admin_auth"); } catch {} }} style={{ fontSize: 11, color: "#888", background: "none", border: "none", cursor: "pointer", padding: 0 }}>Sign out</button>
-        </div>
+    <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
+      {/* Top Header — mobile */}
+      <div style={{ background: "#fff", borderBottom: "1px solid #e0e0e0", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ fontWeight: 800, fontSize: 15, color: "#0D0D0D" }}>VAPE <span style={{ color: "#E23744" }}>ADMIN</span></div>
+        <button onClick={() => { setLoggedIn(false); try { localStorage.removeItem("vape_admin_auth"); } catch {} }} style={{ fontSize: 12, color: "#888", background: "none", border: "1px solid #e0e0e0", borderRadius: 6, cursor: "pointer", padding: "4px 10px" }}>Sign out</button>
+      </div>
+
+      {/* Tab Bar — scrollable horizontal */}
+      <div style={{ background: "#fff", borderBottom: "1px solid #e0e0e0", overflowX: "auto", display: "flex", scrollbarWidth: "none" as const }}>
         {tabs.map(tab => (
           <div key={tab.id} onClick={() => setActiveTab(tab.id)}
-            style={{ padding: "10px 1rem", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 400, color: activeTab === tab.id ? "#E23744" : "#555", cursor: "pointer", background: activeTab === tab.id ? "#FEF2F2" : "transparent", borderLeft: activeTab === tab.id ? "3px solid #E23744" : "3px solid transparent" }}>
+            style={{ padding: "12px 16px", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 400, color: activeTab === tab.id ? "#E23744" : "#555", cursor: "pointer", borderBottom: activeTab === tab.id ? "2px solid #E23744" : "2px solid transparent", whiteSpace: "nowrap" as const, flexShrink: 0 }}>
             {tab.label}
           </div>
         ))}
-        <div style={{ position: "absolute", bottom: "1rem", left: 0, right: 0, padding: "0 1rem" }}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {["VIM", "TVH", "TVP"].map(s => (
-              <span key={s} style={{ fontSize: 11, background: "#e8faf0", color: "#059669", padding: "2px 8px", borderRadius: 100, fontWeight: 600 }}>● {s}</span>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Main */}
-      <div style={{ marginLeft: 220, flex: 1, padding: "2rem" }}>
+      <div style={{ padding: "16px", maxWidth: 900, margin: "0 auto" }}>
         {activeTab === "prices" && <PriceEditor onDeploy={deployAll} onToast={showToast} />}
         {activeTab === "banner" && <BannerEditor onDeploy={deployAll} onToast={showToast} />}
         {activeTab === "product" && <ProductAdder onDeploy={deployAll} onToast={showToast} />}
         {activeTab === "deploy" && <DeployPanel onDeployAll={deployAll} onDeploySingle={deploySingle} deployLog={deployLog} />}
         {activeTab === "accounts" && <Accounts onToast={showToast} />}
-      </div>
+    </div>
 
       {/* Toast */}
       {toast && (
