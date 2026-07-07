@@ -37,20 +37,21 @@ function updatePrices(content: string, prices: Record<string, number>): string {
     const priceStr = formatPrice(price);
     const mrpStr = formatPrice(mrp);
 
-    // Match: slug: "elfbar-600", ... price: "₹1,199"
-    // Replace price value between quotes after price:
-    const priceRegex = new RegExp(
-      `(slug:\s*["']${key}["'][\s\S]*?price:\s*["'])([^"']+)(["'])`,
-      "g"
-    );
-    updated = updated.replace(priceRegex, `$1${priceStr}$3`);
+    // Split into product blocks and update the right one
+    // Format: slug: "elfbar-600",\n    puffs: ...\n    price: "₹1,199"
+    const slugPattern = `slug: "${key}"`;
+    const slugIdx = updated.indexOf(slugPattern);
+    if (slugIdx === -1) continue;
 
-    // Match originalPrice
-    const mrpRegex = new RegExp(
-      `(slug:\s*["']${key}["'][\s\S]*?originalPrice:\s*["'])([^"']+)(["'])`,
-      "g"
-    );
-    updated = updated.replace(mrpRegex, `$1${mrpStr}$3`);
+    // Find the price field after the slug (within next 800 chars)
+    const block = updated.substring(slugIdx, slugIdx + 800);
+
+    // Replace price
+    const newBlock = block
+      .replace(/(price:\s*")[^"]+(")/,  `$1${priceStr}$2`)
+      .replace(/(originalPrice:\s*")[^"]+(")/,  `$1${mrpStr}$2`);
+
+    updated = updated.substring(0, slugIdx) + newBlock + updated.substring(slugIdx + 800);
   }
 
   return updated;
