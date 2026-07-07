@@ -70,7 +70,7 @@ export default function PriceEditor({ onDeploy, onToast }: Props) {
 
   const handleSaveAndDeploy = async () => {
     setSaving(true);
-    const sites = activeSite === "all" ? ["vim", "tvh", "tvp"] : [activeSite];
+    const sites = activeSite === "all" ? ["vim", "tvh", "tvp", "vdb"] : [activeSite];
 
     try {
       addLog("Sending price updates to server...");
@@ -113,9 +113,9 @@ export default function PriceEditor({ onDeploy, onToast }: Props) {
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: "1.5rem" }}>
-        {["all","vim","tvh","tvp"].map(s => (
+        {["all","vim","tvh","tvp","vdb"].map(s => (
           <button key={s} onClick={() => setActiveSite(s)} style={{ padding: "6px 16px", borderRadius: 20, border: "1px solid " + (activeSite === s ? "#E23744" : "#e0e0e0"), background: activeSite === s ? "#FEF2F2" : "#fff", color: activeSite === s ? "#E23744" : "#555", fontWeight: activeSite === s ? 700 : 400, fontSize: 13 }}>
-            {s === "all" ? "All sites" : s === "vim" ? "Mumbai" : s === "tvh" ? "Hyderabad" : "Pune"}
+            {s === "all" ? "All sites" : s === "vim" ? "Mumbai" : s === "tvh" ? "Hyderabad" : s === "tvp" ? "Pune" : "Bangalore"}
           </button>
         ))}
       </div>
