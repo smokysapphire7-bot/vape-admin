@@ -5,6 +5,7 @@ const HOOKS: Record<string, string> = {
   vim: process.env.NEXT_PUBLIC_HOOK_VIM || "",
   tvh: process.env.NEXT_PUBLIC_HOOK_TVH || "",
   tvp: process.env.NEXT_PUBLIC_HOOK_TVP || "",
+  vdb: "",
 };
 
 export const PRODUCTS = [

@@ -6,8 +6,6 @@ import ProductAdder from "./components/ProductAdder";
 import DeployPanel from "./components/DeployPanel";
 import Accounts from "./components/Accounts";
 
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "vapeadmin2026";
-
 const HOOKS = {
   vim: process.env.NEXT_PUBLIC_HOOK_VIM || "",
   tvh: process.env.NEXT_PUBLIC_HOOK_TVH || "",
@@ -24,11 +22,15 @@ export default function AdminPanel() {
   const [toast, setToast] = useState("");
   const [deployLog, setDeployLog] = useState<string[]>([]);
 
-  const login = () => {
-    if (password === ADMIN_PASSWORD) {
-      setLoggedIn(true); setError(false);
-      try { localStorage.setItem("vape_admin_auth", "true"); } catch {}
-    } else setError(true);
+  const login = async () => {
+    try {
+      const res = await fetch("/api/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+      const data = await res.json();
+      if (data.ok) {
+        setLoggedIn(true); setError(false);
+        try { localStorage.setItem("vape_admin_auth", "true"); } catch {}
+      } else setError(true);
+    } catch { setError(true); }
   };
 
   const showToast = (msg: string) => {
