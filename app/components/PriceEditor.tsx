@@ -1,17 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
-
-const GITHUB_TOKENS: Record<string, string> = {
-  vim: process.env.NEXT_PUBLIC_GH_TOKEN_VIM || "",
-  tvh: process.env.NEXT_PUBLIC_GH_TOKEN_TVH || "",
-  tvp: process.env.NEXT_PUBLIC_GH_TOKEN_TVP || "",
-};
-
-const REPOS: Record<string, { owner: string; repo: string; path: string }> = {
-  vim: { owner: "smokysapphire7-bot", repo: "vim-frontend", path: "src/lib/products.ts" },
-  tvh: { owner: "ashilksdofficial-hash", repo: "tvh-frontend", path: "lib/products.ts" },
-  tvp: { owner: "ashilksdofficial-hash", repo: "tvp-frontend", path: "lib/products.ts" },
-};
+import { useState } from "react";
 
 const HOOKS: Record<string, string> = {
   vim: process.env.NEXT_PUBLIC_HOOK_VIM || "",
@@ -55,42 +43,6 @@ export const PRODUCTS = [
 
 type PriceMap = Record<string, number>;
 
-async function getFileSHA(site: string, token: string): Promise<{ sha: string; content: string } | null> {
-  const { owner, repo, path } = REPOS[site];
-  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-    headers: { Authorization: "token " + token, Accept: "application/vnd.github.v3+json" },
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  const content = atob(data.content.replace(/\n/g, ""));
-  return { sha: data.sha, content };
-}
-
-function updatePricesInContent(content: string, prices: PriceMap): string {
-  let updated = content;
-  for (const [key, price] of Object.entries(prices)) {
-    const mrp = Math.round(price * 1.25);
-    // Match price patterns like: price: "₹2,399"  or  price: "₹1,199"
-    const priceRegex = new RegExp(`(slug:\s*"${key}"[^}]*?price:\s*")[^"]*(")`,"s");
-    updated = updated.replace(priceRegex, `$1₹${price.toLocaleString("en-IN")}$2`);
-    // Match mrp patterns
-    const mrpRegex = new RegExp(`(slug:\s*"${key}"[^}]*?mrp:\s*")[^"]*(")`,"s");
-    updated = updated.replace(mrpRegex, `$1₹${mrp.toLocaleString("en-IN")}$2`);
-  }
-  return updated;
-}
-
-async function pushFileToGitHub(site: string, token: string, sha: string, newContent: string, message: string): Promise<boolean> {
-  const { owner, repo, path } = REPOS[site];
-  const encoded = btoa(unescape(encodeURIComponent(newContent)));
-  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-    method: "PUT",
-    headers: { Authorization: "token " + token, Accept: "application/vnd.github.v3+json", "Content-Type": "application/json" },
-    body: JSON.stringify({ message, content: encoded, sha }),
-  });
-  return res.ok;
-}
-
 type Props = { onDeploy: () => void; onToast: (msg: string) => void; };
 
 export default function PriceEditor({ onDeploy, onToast }: Props) {
@@ -119,43 +71,35 @@ export default function PriceEditor({ onDeploy, onToast }: Props) {
   const handleSaveAndDeploy = async () => {
     setSaving(true);
     const sites = activeSite === "all" ? ["vim", "tvh", "tvp"] : [activeSite];
-    let successCount = 0;
 
-    for (const site of sites) {
-      try {
-        addLog(`Reading ${site.toUpperCase()} products.ts...`);
-        const token = GITHUB_TOKENS[site];
-        const file = await getFileSHA(site, token);
+    try {
+      addLog("Sending price updates to server...");
+      const res = await fetch("/api/update-prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sites, prices }),
+      });
 
-        if (!file) {
-          addLog(`✗ Failed to read ${site.toUpperCase()} — check token`);
-          continue;
-        }
+      const data = await res.json();
 
-        addLog(`Updating prices in ${site.toUpperCase()}...`);
-        const updatedContent = updatePricesInContent(file.content, prices);
-
-        const pushed = await pushFileToGitHub(
-          site, token, file.sha, updatedContent,
-          `Update prices via admin panel — ${new Date().toLocaleDateString()}`
-        );
-
-        if (pushed) {
-          addLog(`✓ ${site.toUpperCase()} prices updated and committed`);
-          successCount++;
+      for (const [site, result] of Object.entries(data.results)) {
+        if (result === "success") {
+          addLog("✓ " + site.toUpperCase() + " prices updated and committed");
         } else {
-          addLog(`✗ ${site.toUpperCase()} commit failed`);
+          addLog("✗ " + site.toUpperCase() + " — " + result);
         }
-      } catch (e) {
-        addLog(`✗ ${site.toUpperCase()} error: ${String(e)}`);
       }
-    }
 
-    if (successCount > 0) {
-      addLog(`Vercel rebuilding ${successCount} site(s)...`);
-      onToast(`${successCount} site(s) updated — rebuilding in ~60s`);
-    } else {
-      onToast("No sites updated — check logs");
+      const successCount = Object.values(data.results).filter(r => r === "success").length;
+      if (successCount > 0) {
+        addLog("Vercel rebuilding " + successCount + " site(s)...");
+        onToast(successCount + " site(s) updated — rebuilding in ~60s");
+      } else {
+        onToast("No sites updated — check logs");
+      }
+    } catch (e) {
+      addLog("✗ Error: " + String(e));
+      onToast("Failed — check logs");
     }
 
     setSaving(false);
