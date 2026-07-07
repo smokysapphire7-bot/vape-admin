@@ -11,6 +11,7 @@ type Order = {
   purchasePrice: number;
   profit: number;
   status: string;
+  stockType: "own" | "shop";
 };
 
 type Purchase = {
@@ -34,7 +35,7 @@ type Payout = {
   notes: string;
 };
 
-const EMPTY_ORDER = { site: "VIM", product: "Elfbar Raya D1", qty: "1", salePrice: "", purchasePrice: "", status: "Delivered", date: new Date().toISOString().split("T")[0] };
+const EMPTY_ORDER = { site: "VIM", product: "Elfbar Raya D1", qty: "1", salePrice: "", purchasePrice: "", status: "Delivered", date: new Date().toISOString().split("T")[0], stockType: "own" as "own" | "shop" };
 const EMPTY_PURCHASE = { date: new Date().toISOString().split("T")[0], supplier: "", product: "", qty: "1", unitCost: "", site: "VIM", notes: "" };
 const EMPTY_PAYOUT = { date: new Date().toISOString().split("T")[0], recipient: "", amount: "", type: "Delivery Cost", notes: "" };
 
@@ -96,6 +97,7 @@ export default function Accounts({ onToast }: Props) {
       purchasePrice: purchase * qty,
       profit: (sale - purchase) * qty,
       status: orderForm.status,
+      stockType: orderForm.stockType as "own" | "shop",
     };
     const updated = [newOrder, ...orders];
     setOrders(updated); save("vape_orders", updated);
@@ -252,6 +254,17 @@ export default function Accounts({ onToast }: Props) {
                 <div>{label("Profit preview")}<div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: 13, fontWeight: 700, color: "#059669" }}>₹{orderForm.salePrice && orderForm.purchasePrice ? ((parseInt(orderForm.salePrice) - parseInt(orderForm.purchasePrice)) * parseInt(orderForm.qty || "1")).toLocaleString("en-IN") : "—"}</div></div>
                 <div>{label("Status")}<select value={orderForm.status} onChange={e => updateO("status", e.target.value)}><option>Delivered</option><option>Pending</option><option>Cancelled</option></select></div>
               </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 8 }}>Stock type</label>
+                <div style={{ display: "flex", gap: 10 }}>
+                  {[["own", "Own Stock", "Lower cost — bought in advance", "#059669"], ["shop", "Shop Stock", "Higher cost — bought same day", "#D97706"]].map(([val, label2, desc, color]) => (
+                    <div key={val} onClick={() => updateO("stockType", val)} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, border: "2px solid " + (orderForm.stockType === val ? color : "#e0e0e0"), background: orderForm.stockType === val ? color + "11" : "#fff", cursor: "pointer" }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: orderForm.stockType === val ? color : "#555" }}>{label2}</div>
+                      <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={addOrder} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontWeight: 700, fontSize: 13 }}>Save</button>
                 <button onClick={() => { setShowOrderForm(false); setOrderForm({ ...EMPTY_ORDER }); }} style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 16px", fontSize: 13 }}>Cancel</button>
@@ -263,7 +276,7 @@ export default function Accounts({ onToast }: Props) {
             {filtered.length === 0 ? <p style={{ fontSize: 13, color: "#888", textAlign: "center", padding: "2rem" }}>No orders yet</p> : (
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                  <thead><tr style={{ borderBottom: "1px solid #e0e0e0" }}>{["#","Date","Site","Product","Qty","Sale","Purchase","Profit","Status",""].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>)}</tr></thead>
+                  <thead><tr style={{ borderBottom: "1px solid #e0e0e0" }}>{["#","Date","Site","Product","Qty","Sale","Purchase","Profit","Stock","Status",""].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12, whiteSpace: "nowrap" }}>{h}</th>)}</tr></thead>
                   <tbody>{filtered.map(o => (
                     <tr key={o.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                       <td style={{ padding: "8px 10px", color: "#aaa" }}>{o.id}</td>
@@ -274,6 +287,7 @@ export default function Accounts({ onToast }: Props) {
                       <td style={{ padding: "8px 10px", fontWeight: 600 }}>₹{o.salePrice.toLocaleString("en-IN")}</td>
                       <td style={{ padding: "8px 10px", color: "#888" }}>₹{o.purchasePrice.toLocaleString("en-IN")}</td>
                       <td style={{ padding: "8px 10px", fontWeight: 600, color: "#059669" }}>₹{o.profit.toLocaleString("en-IN")}</td>
+                      <td style={{ padding: "8px 10px" }}>{badge(o.stockType === "own" ? "Own" : "Shop", o.stockType === "own" ? "#e8faf0" : "#FFF9E6", o.stockType === "own" ? "#059669" : "#D97706")}</td>
                       <td style={{ padding: "8px 10px" }}>{badge(o.status, o.status==="Delivered"?"#e8faf0":o.status==="Pending"?"#FFF9E6":"#FEF2F2", o.status==="Delivered"?"#059669":o.status==="Pending"?"#D97706":"#E23744")}</td>
                       <td style={{ padding: "8px 10px" }}>{delBtn(() => deleteOrder(o.id))}</td>
                     </tr>
