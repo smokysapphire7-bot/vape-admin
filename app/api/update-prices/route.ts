@@ -4,12 +4,14 @@ const GITHUB_TOKENS: Record<string, string> = {
   vim: process.env.GH_TOKEN_VIM || "",
   tvh: process.env.GH_TOKEN_TVH || "",
   tvp: process.env.GH_TOKEN_TVP || "",
+  vdb: process.env.GH_TOKEN_VDB || "",
 };
 
 const REPOS: Record<string, { owner: string; repo: string; path: string }> = {
   vim: { owner: "smokysapphire7-bot", repo: "vim-frontend", path: "src/lib/products.ts" },
   tvh: { owner: "ashilksdofficial-hash", repo: "tvh-frontend", path: "lib/products.ts" },
   tvp: { owner: "ashilksdofficial-hash", repo: "tvp-frontend", path: "lib/products.ts" },
+  vdb: { owner: "yousufsahad918-cell", repo: "vdb-frontend", path: "src/lib/products.ts" },
 };
 
 async function getFile(site: string) {
