@@ -202,7 +202,7 @@ export default function Accounts({ onToast }: Props) {
       )}
 
       {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: "1.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: "1.5rem" }}>
         {[
           { label: "Total revenue", value: "₹" + totalAll.toLocaleString("en-IN"), sub: orders.length + " orders", color: "#0D0D0D" },
           { label: "Total profit", value: "₹" + totalProfit.toLocaleString("en-IN"), sub: margin + "% margin", color: "#059669" },
@@ -240,13 +240,13 @@ export default function Accounts({ onToast }: Props) {
 
           {showOrderForm && (
             <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
                 <div>{label("Date")}<input type="date" value={orderForm.date} onChange={e => updateO("date", e.target.value)} /></div>
                 <div>{label("Site")}<select value={orderForm.site} onChange={e => updateO("site", e.target.value)}><option>VIM</option><option>TVH</option><option>TVP</option></select></div>
                 <div>{label("Product")}<select value={orderForm.product} onChange={e => updateO("product", e.target.value)}>{PRODUCTS.map(p => <option key={p}>{p}</option>)}</select></div>
                 <div>{label("Qty")}<input type="number" value={orderForm.qty} onChange={e => updateO("qty", e.target.value)} min="1" /></div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
                 <div>{label("Sale price / unit (₹)")}<input type="number" value={orderForm.salePrice} onChange={e => updateO("salePrice", e.target.value)} placeholder="2399" /></div>
                 <div>{label("Purchase price / unit (₹)")}<input type="number" value={orderForm.purchasePrice} onChange={e => updateO("purchasePrice", e.target.value)} placeholder="1800" /></div>
                 <div>{label("Profit preview")}<div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: 13, fontWeight: 700, color: "#059669" }}>₹{orderForm.salePrice && orderForm.purchasePrice ? ((parseInt(orderForm.salePrice) - parseInt(orderForm.purchasePrice)) * parseInt(orderForm.qty || "1")).toLocaleString("en-IN") : "—"}</div></div>
@@ -299,7 +299,7 @@ export default function Accounts({ onToast }: Props) {
 
           {showPurchaseForm && (
             <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
                 <div>{label("Date")}<input type="date" value={purchaseForm.date} onChange={e => updateP("date", e.target.value)} /></div>
                 <div>{label("Supplier")}<input value={purchaseForm.supplier} onChange={e => updateP("supplier", e.target.value)} placeholder="Elfbar Distributor" /></div>
                 <div>{label("Site")}<select value={purchaseForm.site} onChange={e => updateP("site", e.target.value)}><option>VIM</option><option>TVH</option><option>TVP</option><option>All</option></select></div>
@@ -356,7 +356,7 @@ export default function Accounts({ onToast }: Props) {
 
           {showPayoutForm && (
             <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
                 <div>{label("Date")}<input type="date" value={payoutForm.date} onChange={e => updatePO("date", e.target.value)} /></div>
                 <div>{label("Recipient *")}<input value={payoutForm.recipient} onChange={e => updatePO("recipient", e.target.value)} placeholder="Delivery Partner" /></div>
                 <div>{label("Type")}<select value={payoutForm.type} onChange={e => updatePO("type", e.target.value)}>{PAYOUT_TYPES.map(t => <option key={t}>{t}</option>)}</select></div>

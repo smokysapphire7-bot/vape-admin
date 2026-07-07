@@ -112,7 +112,7 @@ export default function PriceEditor({ onDeploy, onToast }: Props) {
         <p style={{ fontSize: 13, color: "#888" }}>Changes write directly to GitHub and trigger a rebuild</p>
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: "1.5rem", flexWrap: "wrap" as const }}>
         {["all","vim","tvh","tvp","vdb"].map(s => (
           <button key={s} onClick={() => setActiveSite(s)} style={{ padding: "6px 16px", borderRadius: 20, border: "1px solid " + (activeSite === s ? "#E23744" : "#e0e0e0"), background: activeSite === s ? "#FEF2F2" : "#fff", color: activeSite === s ? "#E23744" : "#555", fontWeight: activeSite === s ? 700 : 400, fontSize: 13 }}>
             {s === "all" ? "All sites" : s === "vim" ? "Mumbai" : s === "tvh" ? "Hyderabad" : s === "tvp" ? "Pune" : "Bangalore"}
@@ -123,7 +123,7 @@ export default function PriceEditor({ onDeploy, onToast }: Props) {
       {getCategories().map(cat => (
         <div key={cat.cat} style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: "1rem", color: "#0D0D0D" }}>{cat.cat}</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
             {cat.items.map(item => (
               <div key={item.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#f9f9f9", borderRadius: 8, border: "1px solid #f0f0f0" }}>
                 <span style={{ fontSize: 13, color: "#0D0D0D" }}>{item.name}</span>
