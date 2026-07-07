@@ -9,7 +9,7 @@ export default function ProductAdder({ onDeploy, onToast }: Props) {
     badge: "NEW", puffs: "", nicotine: "20mg Nicotine Salt",
     price: "", originalPrice: "", description: "",
   });
-  const [sites, setSites] = useState({ vim: true, tvh: true, tvp: true });
+  const [sites, setSites] = useState({ vim: true, tvh: true, tvp: true, vdb: true });
   const [imgPreview, setImgPreview] = useState("");
 
   const update = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }));
@@ -104,9 +104,9 @@ export default function ProductAdder({ onDeploy, onToast }: Props) {
         <div style={{ marginBottom: "1rem" }}>
           <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 8 }}>Add to sites</label>
           <div style={{ display: "flex", gap: 16 }}>
-            {[["vim","Mumbai"], ["tvh","Hyderabad"], ["tvp","Pune"]].map(([key, label]) => (
+            {[["vim","Mumbai"], ["tvh","Hyderabad"], ["tvp","Pune"], ["vdb","Bangalore"]].map(([key, label]) => (
               <label key={key} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}>
-                <input type="checkbox" checked={sites[key as keyof typeof sites]} onChange={e => setSites(prev => ({ ...prev, [key]: e.target.checked }))} />
+                <input type="checkbox" checked={!!sites[key as keyof typeof sites]} onChange={e => setSites(prev => ({ ...prev, [key]: e.target.checked }))} />
                 {label}
               </label>
             ))}

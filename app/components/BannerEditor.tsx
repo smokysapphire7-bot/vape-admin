@@ -9,6 +9,7 @@ export default function BannerEditor({ onDeploy, onToast }: Props) {
   const [subText, setSubText] = useState("Limited time offer. Order on WhatsApp now.");
   const [color, setColor] = useState("#E23744");
   const [imgPreview, setImgPreview] = useState("");
+  const [region, setRegion] = useState("all");
 
   const handleImg = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -35,6 +36,15 @@ export default function BannerEditor({ onDeploy, onToast }: Props) {
             <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 12, marginTop: 3 }}>{subText}</div>
           </div>
           <div style={{ background: "rgba(255,255,255,0.2)", color: "#fff", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>Order Now</div>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 12, color: "#888", display: "block", marginBottom: 6 }}>Show banner in</label>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+            {[["all","All Cities"],["vim","Mumbai"],["tvh","Hyderabad"],["tvp","Pune"],["vdb","Bangalore"]].map(([val, label]) => (
+              <button key={val} onClick={() => setRegion(val)} style={{ padding: "5px 14px", borderRadius: 20, border: "1px solid " + (region === val ? "#E23744" : "#e0e0e0"), background: region === val ? "#FEF2F2" : "#fff", color: region === val ? "#E23744" : "#555", fontSize: 12, fontWeight: region === val ? 700 : 400, cursor: "pointer" }}>{label}</button>
+            ))}
+          </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: "1rem" }}>

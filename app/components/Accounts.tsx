@@ -163,8 +163,8 @@ export default function Accounts({ onToast }: Props) {
   const totalPayouts = payouts.reduce((s, p) => s + p.amount, 0);
   const margin = totalSale > 0 ? Math.round((totalProfit / totalSale) * 100) : 0;
 
-  const siteRev: Record<string, number> = { VIM: 0, TVH: 0, TVP: 0 };
-  const sitePro: Record<string, number> = { VIM: 0, TVH: 0, TVP: 0 };
+  const siteRev: Record<string, number> = { VIM: 0, TVH: 0, TVP: 0, VDB: 0 };
+  const sitePro: Record<string, number> = { VIM: 0, TVH: 0, TVP: 0, VDB: 0 };
   orders.forEach(o => { siteRev[o.site] = (siteRev[o.site] || 0) + o.salePrice; sitePro[o.site] = (sitePro[o.site] || 0) + o.profit; });
   const totalAll = Object.values(siteRev).reduce((a, b) => a + b, 0);
 
@@ -228,8 +228,8 @@ export default function Accounts({ onToast }: Props) {
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
             <div style={{ display: "flex", gap: 8 }}>
-              {["all","VIM","TVH","TVP"].map(s => (
-                <button key={s} onClick={() => setFilterSite(s)} style={{ padding: "4px 12px", borderRadius: 20, border: "1px solid " + (filterSite === s ? "#E23744" : "#e0e0e0"), background: filterSite === s ? "#FEF2F2" : "#fff", color: filterSite === s ? "#E23744" : "#555", fontSize: 12, fontWeight: filterSite === s ? 700 : 400 }}>{s === "all" ? "All" : s}</button>
+              {["all","VIM","TVH","TVP","VDB"].map(s => (
+                <button key={s} onClick={() => setFilterSite(s)} style={{ padding: "4px 12px", borderRadius: 20, border: "1px solid " + (filterSite === s ? "#E23744" : "#e0e0e0"), background: filterSite === s ? "#FEF2F2" : "#fff", color: filterSite === s ? "#E23744" : "#555", fontSize: 12, fontWeight: filterSite === s ? 700 : 400 }}>{s === "all" ? "All" : s === "VIM" ? "Mumbai" : s === "TVH" ? "Hyderabad" : s === "TVP" ? "Pune" : "Bangalore"}</button>
               ))}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -242,7 +242,7 @@ export default function Accounts({ onToast }: Props) {
             <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
                 <div>{label("Date")}<input type="date" value={orderForm.date} onChange={e => updateO("date", e.target.value)} /></div>
-                <div>{label("Site")}<select value={orderForm.site} onChange={e => updateO("site", e.target.value)}><option>VIM</option><option>TVH</option><option>TVP</option></select></div>
+                <div>{label("Site")}<select value={orderForm.site} onChange={e => updateO("site", e.target.value)}><option value="VIM">Mumbai</option><option value="TVH">Hyderabad</option><option value="TVP">Pune</option><option value="VDB">Bangalore</option></select></div>
                 <div>{label("Product")}<select value={orderForm.product} onChange={e => updateO("product", e.target.value)}>{PRODUCTS.map(p => <option key={p}>{p}</option>)}</select></div>
                 <div>{label("Qty")}<input type="number" value={orderForm.qty} onChange={e => updateO("qty", e.target.value)} min="1" /></div>
               </div>
@@ -268,7 +268,7 @@ export default function Accounts({ onToast }: Props) {
                     <tr key={o.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
                       <td style={{ padding: "8px 10px", color: "#aaa" }}>{o.id}</td>
                       <td style={{ padding: "8px 10px" }}>{o.date}</td>
-                      <td style={{ padding: "8px 10px" }}>{badge(o.site, "#FEF2F2", "#E23744")}</td>
+                      <td style={{ padding: "8px 10px" }}>{badge(o.site === "VIM" ? "Mumbai" : o.site === "TVH" ? "Hyderabad" : o.site === "TVP" ? "Pune" : o.site === "VDB" ? "Bangalore" : o.site, "#FEF2F2", "#E23744")}</td>
                       <td style={{ padding: "8px 10px", fontWeight: 500 }}>{o.product}</td>
                       <td style={{ padding: "8px 10px", textAlign: "center" }}>{o.qty}</td>
                       <td style={{ padding: "8px 10px", fontWeight: 600 }}>₹{o.salePrice.toLocaleString("en-IN")}</td>
