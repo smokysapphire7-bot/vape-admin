@@ -28,7 +28,13 @@ async function getFile(site: string) {
 }
 
 function formatPrice(num: number): string {
-  return "\u20b9" + num.toLocaleString("en-IN");
+  // Manual Indian number formatting — toLocaleString unreliable in Node
+  const str = num.toString();
+  if (str.length <= 3) return "\u20b9" + str;
+  const last3 = str.slice(-3);
+  const rest = str.slice(0, -3);
+  const formatted = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + last3;
+  return "\u20b9" + formatted;
 }
 
 function updatePrices(content: string, prices: Record<string, number>): string {
