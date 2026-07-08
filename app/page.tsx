@@ -10,6 +10,7 @@ const HOOKS = {
   vim: process.env.NEXT_PUBLIC_HOOK_VIM || "",
   tvh: process.env.NEXT_PUBLIC_HOOK_TVH || "",
   tvp: process.env.NEXT_PUBLIC_HOOK_TVP || "",
+  vdb: process.env.NEXT_PUBLIC_HOOK_VDB || "",
 };
 
 export default function AdminPanel() {
@@ -38,7 +39,7 @@ export default function AdminPanel() {
     setTimeout(() => setToast(""), 3000);
   };
 
-  const triggerDeploy = async (site: "vim" | "tvh" | "tvp") => {
+  const triggerDeploy = async (site: "vim" | "tvh" | "tvp" | "vdb") => {
     try {
       await fetch(HOOKS[site], { method: "POST", mode: "no-cors" });
       const now = new Date().toLocaleTimeString();
@@ -49,10 +50,10 @@ export default function AdminPanel() {
 
   const deployAll = async () => {
     showToast("Deploying all sites — ready in ~60s");
-    await Promise.all([triggerDeploy("vim"), triggerDeploy("tvh"), triggerDeploy("tvp")]);
+    await Promise.all([triggerDeploy("vim"), triggerDeploy("tvh"), triggerDeploy("tvp"), triggerDeploy("vdb")]);
   };
 
-  const deploySingle = async (site: "vim" | "tvh" | "tvp") => {
+  const deploySingle = async (site: "vim" | "tvh" | "tvp" | "vdb") => {
     await triggerDeploy(site);
     showToast(`${site.toUpperCase()} deploy triggered — ready in ~60s`);
   };

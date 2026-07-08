@@ -2,7 +2,7 @@
 
 type Props = {
   onDeployAll: () => void;
-  onDeploySingle: (site: "vim" | "tvh" | "tvp") => void;
+  onDeploySingle: (site: "vim" | "tvh" | "tvp" | "vdb") => void;
   deployLog: string[];
 };
 
@@ -10,6 +10,7 @@ const SITES = [
   { key: "vim" as const, name: "vapeinmumbai.com", label: "VIM — Mumbai" },
   { key: "tvh" as const, name: "thevapesinhyderabad.com", label: "TVH — Hyderabad" },
   { key: "tvp" as const, name: "vapesinpune.com", label: "TVP — Pune" },
+  { key: "vdb" as const, name: "vapedeliverybangalore.com", label: "VDB — Bangalore" },
 ];
 
 export default function DeployPanel({ onDeployAll, onDeploySingle, deployLog }: Props) {
