@@ -1,6 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
 
+declare global {
+  interface Window {
+    storage: {
+      get: (key: string) => Promise<{ value: string } | null>;
+      set: (key: string, value: string) => Promise<void>;
+      delete: (key: string) => Promise<void>;
+      list: (prefix?: string) => Promise<{ keys: string[] }>;
+    };
+  }
+}
+
 type Order = {
   id: string;
   date: string;
