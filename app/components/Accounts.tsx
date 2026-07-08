@@ -94,7 +94,7 @@ export default function Accounts({ onToast }: Props) {
   const savePayouts = (data: Payout[]) => { setPayouts(data); try { localStorage.setItem("vape_payouts", JSON.stringify(data)); } catch {} };
 
   const addOrder = () => {
-    if (editingId) { await saveEdit(); return; }
+    if (editingId) { saveEdit(); return; }
     if (!orderForm.salePrice) { onToast("Enter sale price"); return; }
     const sale = parseInt(orderForm.salePrice);
     const purchase = parseInt(orderForm.purchasePrice || "0");
