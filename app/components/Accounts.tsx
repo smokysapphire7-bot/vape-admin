@@ -67,12 +67,50 @@ export default function Accounts({ onToast }: Props) {
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showSync, setShowSync] = useState(false);
+  const [syncCode, setSyncCode] = useState("");
+  const [inputCode, setInputCode] = useState("");
+  const [syncStatus, setSyncStatus] = useState("");
+  const [syncing, setSyncing] = useState(false);
 
   const [orderForm, setOrderForm] = useState({ ...EMPTY_ORDER });
   const [purchaseForm, setPurchaseForm] = useState({ ...EMPTY_PURCHASE });
   const [payoutForm, setPayoutForm] = useState({ ...EMPTY_PAYOUT });
 
   const updateO = (k: string, v: string) => setOrderForm(p => ({ ...p, [k]: v }));
+
+  const pushSync = async () => {
+    setSyncing(true); setSyncStatus("Generating sync code...");
+    try {
+      const res = await fetch("/api/sync", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "push", data: { orders, purchases, payouts } })
+      });
+      const json = await res.json();
+      if (json.ok) { setSyncCode(json.code); setSyncStatus("Code valid for 24 hours"); }
+      else setSyncStatus("Failed to generate code");
+    } catch { setSyncStatus("Error — check connection"); }
+    setSyncing(false);
+  };
+
+  const pullSync = async () => {
+    if (inputCode.length !== 6) { setSyncStatus("Enter a 6-digit code"); return; }
+    setSyncing(true); setSyncStatus("Fetching data...");
+    try {
+      const res = await fetch("/api/sync", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pull", code: inputCode })
+      });
+      const json = await res.json();
+      if (json.ok) {
+        const { orders: o, purchases: p, payouts: po } = json.data;
+        saveOrders(o || []); savePurchases(p || []); savePayouts(po || []);
+        setSyncStatus("Synced successfully!");
+        setShowSync(false); setInputCode("");
+      } else setSyncStatus(json.error || "Invalid code");
+    } catch { setSyncStatus("Error — check connection"); }
+    setSyncing(false);
+  };
   const updateP = (k: string, v: string) => setPurchaseForm(p => ({ ...p, [k]: v }));
   const updatePO = (k: string, v: string) => setPayoutForm(p => ({ ...p, [k]: v }));
 
