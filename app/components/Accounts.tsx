@@ -51,18 +51,7 @@ const PAYOUT_TYPES = ["Delivery Cost","Hosting","Salary","Marketing","Packaging"
 
 type Props = { onToast: (msg: string) => void; };
 
-async function storageGet(key: string) {
-  try {
-    const result = await window.storage.get(key);
-    return result ? JSON.parse(result.value) : null;
-  } catch { return null; }
-}
 
-async function storageSet(key: string, data: unknown) {
-  try {
-    await window.storage.set(key, JSON.stringify(data));
-  } catch {}
-}
 
 export default function Accounts({ onToast }: Props) {
   const [subTab, setSubTab] = useState<"orders"|"purchases"|"payouts">("orders");
@@ -89,26 +78,22 @@ export default function Accounts({ onToast }: Props) {
 
   // Load all data from storage on mount
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const [o, p, po] = await Promise.all([
-        storageGet("vape_orders"),
-        storageGet("vape_purchases"),
-        storageGet("vape_payouts"),
-      ]);
-      if (o) setOrders(o);
-      if (p) setPurchases(p);
-      if (po) setPayouts(po);
-      setLoading(false);
-    };
-    load();
+    try {
+      const o = localStorage.getItem("vape_orders");
+      const p = localStorage.getItem("vape_purchases");
+      const po = localStorage.getItem("vape_payouts");
+      if (o) setOrders(JSON.parse(o));
+      if (p) setPurchases(JSON.parse(p));
+      if (po) setPayouts(JSON.parse(po));
+    } catch {}
+    setLoading(false);
   }, []);
 
-  const saveOrders = async (data: Order[]) => { setOrders(data); await storageSet("vape_orders", data); };
-  const savePurchases = async (data: Purchase[]) => { setPurchases(data); await storageSet("vape_purchases", data); };
-  const savePayouts = async (data: Payout[]) => { setPayouts(data); await storageSet("vape_payouts", data); };
+  const saveOrders = (data: Order[]) => { setOrders(data); try { localStorage.setItem("vape_orders", JSON.stringify(data)); } catch {} };
+  const savePurchases = (data: Purchase[]) => { setPurchases(data); try { localStorage.setItem("vape_purchases", JSON.stringify(data)); } catch {} };
+  const savePayouts = (data: Payout[]) => { setPayouts(data); try { localStorage.setItem("vape_payouts", JSON.stringify(data)); } catch {} };
 
-  const addOrder = async () => {
+  const addOrder = () => {
     if (editingId) { await saveEdit(); return; }
     if (!orderForm.salePrice) { onToast("Enter sale price"); return; }
     const sale = parseInt(orderForm.salePrice);
@@ -120,7 +105,7 @@ export default function Accounts({ onToast }: Props) {
       qty, salePrice: sale * qty, purchasePrice: purchase * qty, profit: (sale - purchase) * qty,
       status: orderForm.status, stockType: orderForm.stockType,
     };
-    await saveOrders([newOrder, ...orders]);
+    saveOrders([newOrder, ...orders]);
     setShowOrderForm(false); setOrderForm({ ...EMPTY_ORDER });
     onToast("Order logged");
   };
@@ -138,7 +123,7 @@ export default function Accounts({ onToast }: Props) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const saveEdit = async () => {
+  const saveEdit = () => {
     if (!orderForm.salePrice) { onToast("Enter sale price"); return; }
     const sale = parseInt(orderForm.salePrice);
     const purchase = parseInt(orderForm.purchasePrice || "0");
@@ -148,12 +133,12 @@ export default function Accounts({ onToast }: Props) {
       qty, salePrice: sale * qty, purchasePrice: purchase * qty, profit: (sale - purchase) * qty,
       status: orderForm.status, stockType: orderForm.stockType as "own" | "shop",
     } : o);
-    await saveOrders(updated);
+    saveOrders(updated);
     setShowOrderForm(false); setEditingId(null); setOrderForm({ ...EMPTY_ORDER });
     onToast("Order updated");
   };
 
-  const addPurchase = async () => {
+  const addPurchase = () => {
     if (!purchaseForm.product || !purchaseForm.unitCost) { onToast("Fill product and cost"); return; }
     const qty = parseInt(purchaseForm.qty || "1");
     const unit = parseInt(purchaseForm.unitCost);
@@ -163,28 +148,28 @@ export default function Accounts({ onToast }: Props) {
       product: purchaseForm.product, qty, unitCost: unit, totalCost: qty * unit,
       site: purchaseForm.site, notes: purchaseForm.notes,
     };
-    await savePurchases([np, ...purchases]);
+    savePurchases([np, ...purchases]);
     setShowPurchaseForm(false); setPurchaseForm({ ...EMPTY_PURCHASE });
     onToast("Purchase logged");
   };
 
-  const addPayout = async () => {
+  const addPayout = () => {
     if (!payoutForm.recipient || !payoutForm.amount) { onToast("Fill recipient and amount"); return; }
     const np: Payout = {
       id: "O" + String(payouts.length + 1).padStart(3, "0"),
       date: payoutForm.date, recipient: payoutForm.recipient,
       amount: parseInt(payoutForm.amount), type: payoutForm.type, notes: payoutForm.notes,
     };
-    await savePayouts([np, ...payouts]);
+    savePayouts([np, ...payouts]);
     setShowPayoutForm(false); setPayoutForm({ ...EMPTY_PAYOUT });
     onToast("Payout logged");
   };
 
-  const deleteOrder = async (id: string) => { await saveOrders(orders.filter(o => o.id !== id)); onToast("Deleted"); };
-  const deletePurchase = async (id: string) => { await savePurchases(purchases.filter(p => p.id !== id)); onToast("Deleted"); };
-  const deletePayout = async (id: string) => { await savePayouts(payouts.filter(p => p.id !== id)); onToast("Deleted"); };
+  const deleteOrder = (id: string) => { saveOrders(orders.filter(o => o.id !== id)); onToast("Deleted"); };
+  const deletePurchase = (id: string) => { savePurchases(purchases.filter(p => p.id !== id)); onToast("Deleted"); };
+  const deletePayout = (id: string) => { savePayouts(payouts.filter(p => p.id !== id)); onToast("Deleted"); };
 
-  const resetAll = async () => {
+  const resetAll = () => {
     await Promise.all([saveOrders([]), savePurchases([]), savePayouts([])]);
     setShowReset(false); onToast("All data cleared");
   };
@@ -240,7 +225,7 @@ export default function Accounts({ onToast }: Props) {
       headers, ...rows,
       [""],
       ["TOTALS,,,," + "Qty " + rows.reduce((s,r)=>s+(Number(r[4])||0),0) + ",Sale Rs." + totalSaleAmt.toLocaleString("en-IN") + ",Purchase Rs." + totalPurchaseAmt.toLocaleString("en-IN") + ",Profit Rs." + totalProfitAmt.toLocaleString("en-IN")],
-    ].map(r => Array.isArray(r) ? r.join(",") : r).join("\n");
+    ].map(r => Array.isArray(r) ? r.join(",") : r).join("\\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = "vape_report_" + today + ".csv";
@@ -258,7 +243,7 @@ export default function Accounts({ onToast }: Props) {
       ["#,Date,Supplier,Product,Qty,Unit Cost,Total,Site,Notes"],
       ...purchases.map(p => [p.id,p.date,p.supplier,p.product,p.qty,p.unitCost,"Rs."+p.totalCost.toLocaleString("en-IN"),p.site==="VIM"?"Mumbai":p.site==="TVH"?"Hyderabad":p.site==="TVP"?"Pune":"Bangalore",p.notes]),
       ["","","","TOTAL",purchases.reduce((s,p)=>s+p.qty,0),"","Rs."+totalCost.toLocaleString("en-IN"),"",""],
-    ].map(r => Array.isArray(r) ? r.join(",") : r).join("\n");
+    ].map(r => Array.isArray(r) ? r.join(",") : r).join("\\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = "purchases_" + today + ".csv"; a.click();
@@ -280,7 +265,7 @@ export default function Accounts({ onToast }: Props) {
       ["#,Date,Recipient,Type,Amount,Notes"],
       ...payouts.map(p => [p.id,p.date,p.recipient,p.type,"Rs."+p.amount.toLocaleString("en-IN"),p.notes]),
       ["TOTAL","","","","Rs."+totalAmt.toLocaleString("en-IN"),""],
-    ].map(r => Array.isArray(r) ? r.join(",") : r).join("\n");
+    ].map(r => Array.isArray(r) ? r.join(",") : r).join("\\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     a.download = "payouts_" + today + ".csv"; a.click();
@@ -449,7 +434,7 @@ export default function Accounts({ onToast }: Props) {
             <h3 style={{ fontSize: 14, fontWeight: 700 }}>Stock purchases ({purchases.length}) — Rs.{purchases.reduce((s,p)=>s+p.totalCost,0).toLocaleString("en-IN")}</h3>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={downloadPurchases} style={{ background: "#fff", color: "#059669", border: "1px solid #059669", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>Export</button>
-              <button onClick={() => { setPurchases([]); storageSet("vape_purchases", []); onToast("Cleared"); }} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>Reset</button>
+              <button onClick={() => { setPurchases([]); localStorage.setItem("vape_purchases", "[]"); onToast("Cleared"); }} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>Reset</button>
               <button onClick={() => setShowPurchaseForm(!showPurchaseForm)} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Add</button>
             </div>
           </div>
@@ -504,7 +489,7 @@ export default function Accounts({ onToast }: Props) {
             <h3 style={{ fontSize: 14, fontWeight: 700 }}>Payouts ({payouts.length}) — Rs.{payouts.reduce((s,p)=>s+p.amount,0).toLocaleString("en-IN")}</h3>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={downloadPayouts} style={{ background: "#fff", color: "#059669", border: "1px solid #059669", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>Export</button>
-              <button onClick={() => { setPayouts([]); storageSet("vape_payouts", []); onToast("Cleared"); }} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>Reset</button>
+              <button onClick={() => { setPayouts([]); localStorage.setItem("vape_payouts", "[]"); onToast("Cleared"); }} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>Reset</button>
               <button onClick={() => setShowPayoutForm(!showPayoutForm)} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>+ Add</button>
             </div>
           </div>
