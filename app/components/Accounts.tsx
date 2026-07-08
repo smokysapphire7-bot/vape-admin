@@ -454,7 +454,7 @@ export default function Accounts({ onToast }: Props) {
 
           <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem" }}>
             {purchases.length === 0 ? <p style={{ fontSize: 13, color: "#888", textAlign: "center", padding: "2rem" }}>No purchases logged yet</p> : (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as const }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead><tr style={{ borderBottom: "1px solid #e0e0e0" }}>{["#","Date","Supplier","Product","Qty","Unit Cost","Total","Site","Notes",""].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12 }}>{h}</th>)}</tr></thead>
                 <tbody>{purchases.map(p => (
                   <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
@@ -506,7 +506,7 @@ export default function Accounts({ onToast }: Props) {
 
           <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 12, padding: "1.25rem" }}>
             {payouts.length === 0 ? <p style={{ fontSize: 13, color: "#888", textAlign: "center", padding: "2rem" }}>No payouts logged yet</p> : (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as const }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead><tr style={{ borderBottom: "1px solid #e0e0e0" }}>{["#","Date","Recipient","Type","Amount","Notes",""].map(h => <th key={h} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, color: "#888", fontSize: 12 }}>{h}</th>)}</tr></thead>
                 <tbody>{payouts.map(p => (
                   <tr key={p.id} style={{ borderBottom: "1px solid #f5f5f5" }}>
