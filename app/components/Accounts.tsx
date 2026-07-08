@@ -170,7 +170,7 @@ export default function Accounts({ onToast }: Props) {
   const deletePayout = (id: string) => { savePayouts(payouts.filter(p => p.id !== id)); onToast("Deleted"); };
 
   const resetAll = () => {
-    await Promise.all([saveOrders([]), savePurchases([]), savePayouts([])]);
+    saveOrders([]); savePurchases([]); savePayouts([]);
     setShowReset(false); onToast("All data cleared");
   };
 
