@@ -6,13 +6,6 @@ import ProductAdder from "./components/ProductAdder";
 import DeployPanel from "./components/DeployPanel";
 import Accounts from "./components/Accounts";
 
-const HOOKS = {
-  vim: process.env.NEXT_PUBLIC_HOOK_VIM || "",
-  tvh: process.env.NEXT_PUBLIC_HOOK_TVH || "",
-  tvp: process.env.NEXT_PUBLIC_HOOK_TVP || "",
-  vdb: process.env.NEXT_PUBLIC_HOOK_VDB || "",
-};
-
 export default function AdminPanel() {
   const [loggedIn, setLoggedIn] = useState(() => {
     try { return localStorage.getItem("vape_admin_auth") === "true"; } catch { return false; }
@@ -41,7 +34,7 @@ export default function AdminPanel() {
 
   const triggerDeploy = async (site: "vim" | "tvh" | "tvp" | "vdb") => {
     try {
-      await fetch(HOOKS[site], { method: "POST", mode: "no-cors" });
+      await fetch("/api/deploy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sites: [site] }) });
       const now = new Date().toLocaleTimeString();
       setDeployLog(prev => [`[${now}] ${site.toUpperCase()} deploy triggered`, ...prev].slice(0, 15));
       return true;
