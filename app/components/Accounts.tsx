@@ -66,6 +66,7 @@ export default function Accounts({ onToast }: Props) {
   });
 
   const [showOrderForm, setShowOrderForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -83,6 +84,7 @@ export default function Accounts({ onToast }: Props) {
   };
 
   const addOrder = () => {
+    if (editingId) { saveEdit(); return; }
     if (!orderForm.salePrice) { onToast("Enter sale price"); return; }
     const sale = parseInt(orderForm.salePrice);
     const purchase = parseInt(orderForm.purchasePrice || "0");
@@ -141,6 +143,44 @@ export default function Accounts({ onToast }: Props) {
   };
 
   const deleteOrder = (id: string) => { const u = orders.filter(o => o.id !== id); setOrders(u); save("vape_orders", u); onToast("Deleted"); };
+
+  const startEdit = (order: Order) => {
+    setOrderForm({
+      date: order.date,
+      site: order.site,
+      product: order.product,
+      qty: String(order.qty),
+      salePrice: String(Math.round(order.salePrice / order.qty)),
+      purchasePrice: String(Math.round(order.purchasePrice / order.qty)),
+      status: order.status,
+      stockType: order.stockType || "own",
+    });
+    setEditingId(order.id);
+    setShowOrderForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const saveEdit = () => {
+    if (!orderForm.salePrice) { onToast("Enter sale price"); return; }
+    const sale = parseInt(orderForm.salePrice);
+    const purchase = parseInt(orderForm.purchasePrice || "0");
+    const qty = parseInt(orderForm.qty || "1");
+    const updated = orders.map(o => o.id === editingId ? {
+      ...o,
+      date: orderForm.date,
+      site: orderForm.site,
+      product: orderForm.product,
+      qty,
+      salePrice: sale * qty,
+      purchasePrice: purchase * qty,
+      profit: (sale - purchase) * qty,
+      status: orderForm.status,
+      stockType: orderForm.stockType as "own" | "shop",
+    } : o);
+    setOrders(updated); save("vape_orders", updated);
+    setShowOrderForm(false); setEditingId(null); setOrderForm({ ...EMPTY_ORDER });
+    onToast("Order updated");
+  };
   const deletePurchase = (id: string) => { const u = purchases.filter(p => p.id !== id); setPurchases(u); save("vape_purchases", u); onToast("Deleted"); };
   const deletePayout = (id: string) => { const u = payouts.filter(p => p.id !== id); setPayouts(u); save("vape_payouts", u); onToast("Deleted"); };
 
@@ -341,8 +381,8 @@ export default function Accounts({ onToast }: Props) {
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={addOrder} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontWeight: 700, fontSize: 13 }}>Save</button>
-                <button onClick={() => { setShowOrderForm(false); setOrderForm({ ...EMPTY_ORDER }); }} style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 16px", fontSize: 13 }}>Cancel</button>
+                <button onClick={addOrder} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontWeight: 700, fontSize: 13 }}>{editingId ? "Update Order" : "Save Order"}</button>
+                <button onClick={() => { setShowOrderForm(false); setEditingId(null); setOrderForm({ ...EMPTY_ORDER }); }} style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 16px", fontSize: 13 }}>Cancel</button>
               </div>
             </div>
           )}
@@ -364,7 +404,12 @@ export default function Accounts({ onToast }: Props) {
                       <td style={{ padding: "8px 10px", fontWeight: 600, color: "#059669" }}>₹{o.profit.toLocaleString("en-IN")}</td>
                       <td style={{ padding: "8px 10px" }}>{badge(o.stockType === "own" ? "Own" : "Shop", o.stockType === "own" ? "#e8faf0" : "#FFF9E6", o.stockType === "own" ? "#059669" : "#D97706")}</td>
                       <td style={{ padding: "8px 10px" }}>{badge(o.status, o.status==="Delivered"?"#e8faf0":o.status==="Pending"?"#FFF9E6":"#FEF2F2", o.status==="Delivered"?"#059669":o.status==="Pending"?"#D97706":"#E23744")}</td>
-                      <td style={{ padding: "8px 10px" }}>{delBtn(() => deleteOrder(o.id))}</td>
+                      <td style={{ padding: "8px 10px" }}>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button onClick={() => startEdit(o)} style={{ background: "#EFF6FF", border: "none", borderRadius: 6, padding: "4px 8px", color: "#2563EB", cursor: "pointer", fontSize: 12 }}>✏️</button>
+                          {delBtn(() => deleteOrder(o.id))}
+                        </div>
+                      </td>
                     </tr>
                   ))}</tbody>
                 </table>
