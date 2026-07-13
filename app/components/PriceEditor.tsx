@@ -33,7 +33,7 @@ export const PRODUCTS = [
   { name: "Amber Leaf Tobacco", key: "amber-leaf-rolling-tobacco", price: 1199 },
   { name: "Drum Bright Blue", key: "drum-bright-blue-tobacco", price: 1199 },
   { name: "Golden Virginia", key: "golden-virginia-tobacco", price: 1199 },
-  { name: "Natural American Spirit", key: "natural-american-spirit", price: 1199 },
+  { name: "Natural American Spirit", key: "natural-american-spirit-tobacco", price: 1199 },
   { name: "Caliburn KOKO GK3", key: "caliburn-koko-gk3", price: 6299 },
   { name: "Caliburn G3 Lite", key: "caliburn-g3-lite", price: 4599 },
   { name: "Caliburn G3 Lite KOKO", key: "caliburn-g3-lite-koko", price: 5999 },
