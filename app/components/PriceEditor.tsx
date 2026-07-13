@@ -55,13 +55,6 @@ export const PRODUCTS = [
   { name: "Caliburn Xpod", key: "caliburn-xpod", price: 6500 },
 ];
 
-  const getCategories = () => [
-    { cat: "Disposables", items: PRODUCTS.slice(0, 15) },
-    { cat: "E-Liquids & Pouches", items: PRODUCTS.slice(15, 21) },
-    { cat: "Tobacco", items: PRODUCTS.slice(21, 25) },
-    { cat: "Caliburn Pod Systems", items: PRODUCTS.slice(25) },
-  ];
-
   return (
     <div>
       <div style={{ marginBottom: "1.5rem" }}>
