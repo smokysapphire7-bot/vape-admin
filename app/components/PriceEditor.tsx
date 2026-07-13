@@ -9,7 +9,6 @@ const HOOKS: Record<string, string> = {
 };
 
 export const PRODUCTS = [
-  // Disposables
   { name: "Elfbar 600", key: "elfbar-600", price: 1199 },
   { name: "Elfbar Raya D1", key: "elfbar-raya-d1", price: 2399 },
   { name: "Elfbar MoonNight 40K", key: "elfbar-moonnight-40k", price: 3299 },
@@ -25,19 +24,16 @@ export const PRODUCTS = [
   { name: "IGET Astro B18000", key: "iget-astro-b18000", price: 2499 },
   { name: "Yuoto Beyonder", key: "yuoto-beyonder", price: 2199 },
   { name: "Yuoto Thanos", key: "yuoto-thanos", price: 1999 },
-  // E-Liquids & Pouches
   { name: "Elfliq Nic Salt 30ml", key: "elfliq-nic-salts", price: 1999 },
   { name: "Pod Salt Core 30ml", key: "pod-salt-core-nic-salt-30ml", price: 1999 },
   { name: "Pod Salt Hit The Spot", key: "pod-salt-hit-the-spot", price: 1999 },
   { name: "Nasty Salt 30ml", key: "nasty-salt-30ml", price: 1899 },
   { name: "ZYN Cool Mint", key: "zyn-cool-mint", price: 1299 },
   { name: "Velo Peppermint", key: "velo-freezing-peppermint", price: 1299 },
-  // Tobacco
   { name: "Amber Leaf Tobacco", key: "amber-leaf-rolling-tobacco", price: 1199 },
   { name: "Drum Bright Blue", key: "drum-bright-blue-tobacco", price: 1199 },
   { name: "Golden Virginia", key: "golden-virginia-tobacco", price: 1199 },
   { name: "Natural American Spirit", key: "natural-american-spirit-tobacco", price: 1199 },
-  // Caliburn Pod Systems
   { name: "Caliburn KOKO GK3", key: "caliburn-koko-gk3", price: 6299 },
   { name: "Caliburn G3 Lite", key: "caliburn-g3-lite", price: 4599 },
   { name: "Caliburn G3 Lite KOKO", key: "caliburn-g3-lite-koko", price: 5999 },
@@ -55,6 +51,70 @@ export const PRODUCTS = [
   { name: "Caliburn Xpod", key: "caliburn-xpod", price: 6500 },
 ];
 
+type PriceMap = Record<string, number>;
+type Props = { onDeploy: () => void; onToast: (msg: string) => void; };
+
+export default function PriceEditor({ onDeploy, onToast }: Props) {
+  const [prices, setPrices] = useState<PriceMap>(() => {
+    const p: PriceMap = {};
+    PRODUCTS.forEach(prod => { p[prod.key] = prod.price; });
+    return p;
+  });
+  const [activeSite, setActiveSite] = useState("all");
+  const [saving, setSaving] = useState(false);
+  const [log, setLog] = useState<string[]>([]);
+
+  const getCategories = () => [
+    { cat: "Disposables", items: PRODUCTS.slice(0, 15) },
+    { cat: "E-Liquids & Pouches", items: PRODUCTS.slice(15, 21) },
+    { cat: "Tobacco", items: PRODUCTS.slice(21, 25) },
+    { cat: "Caliburn Pod Systems", items: PRODUCTS.slice(25) },
+  ];
+
+  const addLog = (msg: string) => setLog(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 20));
+
+  const updatePrice = (key: string, val: string) => {
+    const num = parseInt(val.replace(/[^0-9]/g, ""));
+    if (!isNaN(num)) setPrices(prev => ({ ...prev, [key]: num }));
+  };
+
+  const handleSaveAndDeploy = async () => {
+    setSaving(true);
+    const sites = activeSite === "all" ? ["vim", "tvh", "tvp", "vdb"] : [activeSite];
+
+    try {
+      addLog("Sending price updates to server...");
+      const res = await fetch("/api/update-prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sites, prices }),
+      });
+
+      const data = await res.json();
+
+      for (const [site, result] of Object.entries(data.results)) {
+        if (result === "success") {
+          addLog("checkmark " + site.toUpperCase() + " prices updated and committed");
+        } else {
+          addLog("x " + site.toUpperCase() + " -- " + result);
+        }
+      }
+
+      const successCount = Object.values(data.results).filter(r => r === "success").length;
+      if (successCount > 0) {
+        addLog("Vercel rebuilding " + successCount + " site(s)...");
+        onToast(successCount + " site(s) updated -- rebuilding in ~60s");
+      } else {
+        onToast("No sites updated -- check logs");
+      }
+    } catch (e) {
+      addLog("x Error: " + String(e));
+      onToast("Failed -- check logs");
+    }
+
+    setSaving(false);
+  };
+
   return (
     <div>
       <div style={{ marginBottom: "1.5rem" }}>
@@ -64,7 +124,7 @@ export const PRODUCTS = [
 
       <div style={{ display: "flex", gap: 8, marginBottom: "1.5rem", flexWrap: "wrap" as const }}>
         {["all","vim","tvh","tvp","vdb"].map(s => (
-          <button key={s} onClick={() => setActiveSite(s)} style={{ padding: "6px 16px", borderRadius: 20, border: "1px solid " + (activeSite === s ? "#E23744" : "#e0e0e0"), background: activeSite === s ? "#FEF2F2" : "#fff", color: activeSite === s ? "#E23744" : "#555", fontWeight: activeSite === s ? 700 : 400, fontSize: 13 }}>
+          <button key={s} onClick={() => setActiveSite(s)} style={{ padding: "6px 16px", borderRadius: 20, border: "1px solid " + (activeSite === s ? "#E23744" : "#e0e0e0"), background: activeSite === s ? "#FEF2F2" : "#fff", color: activeSite === s ? "#E23744" : "#555", fontWeight: activeSite === s ? 700 : 400, fontSize: 13, cursor: "pointer" }}>
             {s === "all" ? "All sites" : s === "vim" ? "Mumbai" : s === "tvh" ? "Hyderabad" : s === "tvp" ? "Pune" : "Bangalore"}
           </button>
         ))}
@@ -78,7 +138,7 @@ export const PRODUCTS = [
               <div key={item.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "#f9f9f9", borderRadius: 8, border: "1px solid #f0f0f0" }}>
                 <span style={{ fontSize: 13, color: "#0D0D0D" }}>{item.name}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  <span style={{ fontSize: 13, color: "#888" }}>₹</span>
+                  <span style={{ fontSize: 13, color: "#888" }}>Rs.</span>
                   <input type="number" value={prices[item.key]} onChange={e => updatePrice(item.key, e.target.value)}
                     style={{ width: 80, textAlign: "right", padding: "4px 8px", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 13 }} />
                 </div>
@@ -89,14 +149,16 @@ export const PRODUCTS = [
       ))}
 
       <button onClick={handleSaveAndDeploy} disabled={saving} style={{ width: "100%", background: saving ? "#ccc" : "#E23744", color: "#fff", border: "none", borderRadius: 10, padding: "12px", fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: saving ? "not-allowed" : "pointer" }}>
-        {saving ? "⏳ Updating prices..." : "💾 Save prices and deploy " + (activeSite === "all" ? "all sites" : activeSite.toUpperCase())}
+        {saving ? "Updating prices..." : "Save prices and deploy " + (activeSite === "all" ? "all sites" : activeSite.toUpperCase())}
       </button>
 
       {log.length > 0 && (
         <div style={{ marginTop: "1rem", background: "#0D0D0D", borderRadius: 12, padding: "1rem" }}>
           <div style={{ fontSize: 12, color: "#888", marginBottom: 8, fontWeight: 600 }}>Deploy log</div>
           {log.map((l, i) => (
-            <div key={i} style={{ fontFamily: "monospace", fontSize: 12, color: l.includes("✓") ? "#25D366" : l.includes("✗") ? "#E23744" : "#aaa", marginBottom: 4 }}>{l}</div>
+            <div key={i} style={{ fontFamily: "monospace", fontSize: 12, color: l.includes("checkmark") ? "#25D366" : l.includes(" x ") ? "#E23744" : "#aaa", marginBottom: 4 }}>
+              {l.replace("checkmark", "checkmark").replace(" x ", " x ")}
+            </div>
           ))}
         </div>
       )}
