@@ -9,6 +9,7 @@ const HOOKS: Record<string, string> = {
 };
 
 export const PRODUCTS = [
+  // Disposables
   { name: "Elfbar 600", key: "elfbar-600", price: 1199 },
   { name: "Elfbar Raya D1", key: "elfbar-raya-d1", price: 2399 },
   { name: "Elfbar MoonNight 40K", key: "elfbar-moonnight-40k", price: 3299 },
@@ -24,16 +25,19 @@ export const PRODUCTS = [
   { name: "IGET Astro B18000", key: "iget-astro-b18000", price: 2499 },
   { name: "Yuoto Beyonder", key: "yuoto-beyonder", price: 2199 },
   { name: "Yuoto Thanos", key: "yuoto-thanos", price: 1999 },
+  // E-Liquids & Pouches
   { name: "Elfliq Nic Salt 30ml", key: "elfliq-nic-salts", price: 1999 },
   { name: "Pod Salt Core 30ml", key: "pod-salt-core-nic-salt-30ml", price: 1999 },
   { name: "Pod Salt Hit The Spot", key: "pod-salt-hit-the-spot", price: 1999 },
   { name: "Nasty Salt 30ml", key: "nasty-salt-30ml", price: 1899 },
   { name: "ZYN Cool Mint", key: "zyn-cool-mint", price: 1299 },
   { name: "Velo Peppermint", key: "velo-freezing-peppermint", price: 1299 },
+  // Tobacco
   { name: "Amber Leaf Tobacco", key: "amber-leaf-rolling-tobacco", price: 1199 },
   { name: "Drum Bright Blue", key: "drum-bright-blue-tobacco", price: 1199 },
   { name: "Golden Virginia", key: "golden-virginia-tobacco", price: 1199 },
   { name: "Natural American Spirit", key: "natural-american-spirit-tobacco", price: 1199 },
+  // Caliburn Pod Systems
   { name: "Caliburn KOKO GK3", key: "caliburn-koko-gk3", price: 6299 },
   { name: "Caliburn G3 Lite", key: "caliburn-g3-lite", price: 4599 },
   { name: "Caliburn G3 Lite KOKO", key: "caliburn-g3-lite-koko", price: 5999 },
@@ -49,73 +53,14 @@ export const PRODUCTS = [
   { name: "Caliburn GK2", key: "caliburn-gk2", price: 5800 },
   { name: "Caliburn A2", key: "caliburn-a2", price: 5899 },
   { name: "Caliburn Xpod", key: "caliburn-xpod", price: 6500 },
-  { name: "Caliburn A2", key: "caliburn-a2", price: 5899 },
-  { name: "Caliburn Xpod", key: "caliburn-xpod", price: 6500 },
 ];
-
-type PriceMap = Record<string, number>;
-
-type Props = { onDeploy: () => void; onToast: (msg: string) => void; };
-
-export default function PriceEditor({ onDeploy, onToast }: Props) {
-  const [prices, setPrices] = useState<PriceMap>(() => {
-    const p: PriceMap = {};
-    PRODUCTS.forEach(prod => { p[prod.key] = prod.price; });
-    return p;
-  });
-  const [activeSite, setActiveSite] = useState("all");
-  const [saving, setSaving] = useState(false);
-  const [log, setLog] = useState<string[]>([]);
-
-  const addLog = (msg: string) => setLog(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 20));
-
-  const updatePrice = (key: string, val: string) => {
-    const num = parseInt(val.replace(/[^0-9]/g, ""));
-    if (!isNaN(num)) setPrices(prev => ({ ...prev, [key]: num }));
-  };
 
   const getCategories = () => [
     { cat: "Disposables", items: PRODUCTS.slice(0, 15) },
     { cat: "E-Liquids & Pouches", items: PRODUCTS.slice(15, 21) },
-    { cat: "Caliburn Pod Systems", items: PRODUCTS.slice(21) },
+    { cat: "Tobacco", items: PRODUCTS.slice(21, 25) },
+    { cat: "Caliburn Pod Systems", items: PRODUCTS.slice(25) },
   ];
-
-  const handleSaveAndDeploy = async () => {
-    setSaving(true);
-    const sites = activeSite === "all" ? ["vim", "tvh", "tvp", "vdb"] : [activeSite];
-
-    try {
-      addLog("Sending price updates to server...");
-      const res = await fetch("/api/update-prices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sites, prices }),
-      });
-
-      const data = await res.json();
-
-      for (const [site, result] of Object.entries(data.results)) {
-        if (result === "success") {
-          addLog("✓ " + site.toUpperCase() + " prices updated and committed");
-        } else {
-          addLog("✗ " + site.toUpperCase() + " — " + result);
-        }
-      }
-
-      const successCount = Object.values(data.results).filter(r => r === "success").length;
-      if (successCount > 0) {
-        addLog("Vercel rebuilding " + successCount + " site(s)...");
-        onToast(successCount + " site(s) updated — rebuilding in ~60s");
-      } else {
-        onToast("No sites updated — check logs");
-      }
-    } catch (e) {
-      addLog("✗ Error: " + String(e));
-      onToast("Failed — check logs");
-    }
-
-    setSaving(false);
-  };
 
   return (
     <div>
