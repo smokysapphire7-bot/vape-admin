@@ -25,12 +25,11 @@ export const PRODUCTS = [
   { name: "Yuoto Beyonder", key: "yuoto-beyonder", price: 2199 },
   { name: "Yuoto Thanos", key: "yuoto-thanos", price: 1999 },
   { name: "Elfliq Nic Salt 30ml", key: "elfliq-nic-salts", price: 1999 },
-  { name: "Pod Salt Core 30ml", key: "pod-salt-core-nic-salt-30ml", price: 1999 },
+  { name: "Pod Salt Core 30ml", key: "pod-salt-core-nic-salt", price: 1999 },
   { name: "Pod Salt Hit The Spot", key: "pod-salt-hit-the-spot", price: 1999 },
-  { name: "Nasty Salt 30ml", key: "nasty-salt-30ml", price: 1899 },
   { name: "ZYN Cool Mint", key: "zyn-cool-mint", price: 1299 },
   { name: "Velo Peppermint", key: "velo-freezing-peppermint", price: 1299 },
-  { name: "Amber Leaf Tobacco", key: "amber-leaf-rolling-tobacco", price: 1199 },
+  { name: "Amber Leaf Tobacco", key: "amber-leaf-tobacco", price: 1199 },
   { name: "Drum Bright Blue", key: "drum-bright-blue-tobacco", price: 1199 },
   { name: "Golden Virginia", key: "golden-virginia-tobacco", price: 1199 },
   { name: "Natural American Spirit", key: "natural-american-spirit-tobacco", price: 1199 },
@@ -66,9 +65,9 @@ export default function PriceEditor({ onDeploy, onToast }: Props) {
 
   const getCategories = () => [
     { cat: "Disposables", items: PRODUCTS.slice(0, 15) },
-    { cat: "E-Liquids & Pouches", items: PRODUCTS.slice(15, 21) },
-    { cat: "Tobacco", items: PRODUCTS.slice(21, 25) },
-    { cat: "Caliburn Pod Systems", items: PRODUCTS.slice(25) },
+    { cat: "E-Liquids & Pouches", items: PRODUCTS.slice(15, 20) },
+    { cat: "Tobacco", items: PRODUCTS.slice(20, 24) },
+    { cat: "Caliburn Pod Systems", items: PRODUCTS.slice(24) },
   ];
 
   const addLog = (msg: string) => setLog(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 20));
