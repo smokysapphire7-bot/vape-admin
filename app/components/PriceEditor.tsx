@@ -18,7 +18,7 @@ export const PRODUCTS = [
   { name: "Elfbar Raya SOBO", key: "elfbar-raya-sobo", price: 3299 },
   { name: "Elfbar Trio", key: "elfbar-trio", price: 3199 },
   { name: "Elfbar BC 10000", key: "elfbar-bc-10000", price: 2199 },
-  { name: "Lost Mary MT35000", key: "lost-mary-mt35000-turbo", price: 3199 },
+  { name: "Lost Mary MT35000 Turbo", key: "lost-mary-mt35000-turbo", price: 3199 },
   { name: "Lost Mary MO10000", key: "lost-mary-mo10000", price: 2199 },
   { name: "Nasty Bolt WTF 50K", key: "nasty-bolt-wtf-50k", price: 3499 },
   { name: "IGET Astro B18000", key: "iget-astro-b18000", price: 2499 },
