@@ -67,6 +67,8 @@ export default function Accounts({ onToast }: Props) {
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
   const [showSync, setShowSync] = useState(false);
   const [syncCode, setSyncCode] = useState("");
   const [inputCode, setInputCode] = useState("");
@@ -310,7 +312,9 @@ export default function Accounts({ onToast }: Props) {
     onToast("Payouts exported");
   };
 
-  const filtered = filterSite === "all" ? orders : orders.filter(o => o.site === filterSite);
+  const allFiltered = filterSite === "all" ? orders : orders.filter(o => o.site === filterSite);
+  const totalPages = Math.ceil(allFiltered.length / PAGE_SIZE);
+  const filtered = allFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalSale = filtered.reduce((s, o) => s + o.salePrice, 0);
   const totalProfit = filtered.reduce((s, o) => s + o.profit, 0);
   const totalPurchasesAmt = purchases.reduce((s, p) => s + p.totalCost, 0);
@@ -391,7 +395,7 @@ export default function Accounts({ onToast }: Props) {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap" as const, gap: 8 }}>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
               {["all","VIM","TVH","TVP","VDB"].map(s => (
-                <button key={s} onClick={() => setFilterSite(s)} style={{ padding: "4px 12px", borderRadius: 20, border: "1px solid " + (filterSite === s ? "#E23744" : "#e0e0e0"), background: filterSite === s ? "#FEF2F2" : "#fff", color: filterSite === s ? "#E23744" : "#555", fontSize: 12, fontWeight: filterSite === s ? 700 : 400, cursor: "pointer" }}>
+                <button key={s} onClick={() => { setFilterSite(s); setPage(1); }} style={{ padding: "4px 12px", borderRadius: 20, border: "1px solid " + (filterSite === s ? "#E23744" : "#e0e0e0"), background: filterSite === s ? "#FEF2F2" : "#fff", color: filterSite === s ? "#E23744" : "#555", fontSize: 12, fontWeight: filterSite === s ? 700 : 400, cursor: "pointer" }}>
                   {s === "all" ? "All" : s === "VIM" ? "Mumbai" : s === "TVH" ? "Hyderabad" : s === "TVP" ? "Pune" : "Bangalore"}
                 </button>
               ))}
