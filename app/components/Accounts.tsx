@@ -315,8 +315,6 @@ export default function Accounts({ onToast }: Props) {
   const allFiltered = filterSite === "all" ? orders : orders.filter(o => o.site === filterSite);
   const totalPages = Math.ceil(allFiltered.length / PAGE_SIZE);
   const filtered = allFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const totalPages = Math.ceil(allFiltered.length / PAGE_SIZE);
-  const filtered = allFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalSale = filtered.reduce((s, o) => s + o.salePrice, 0);
   const totalProfit = filtered.reduce((s, o) => s + o.profit, 0);
   const totalPurchasesAmt = purchases.reduce((s, p) => s + p.totalCost, 0);
