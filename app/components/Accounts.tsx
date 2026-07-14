@@ -315,6 +315,8 @@ export default function Accounts({ onToast }: Props) {
   const allFiltered = filterSite === "all" ? orders : orders.filter(o => o.site === filterSite);
   const totalPages = Math.ceil(allFiltered.length / PAGE_SIZE);
   const filtered = allFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil(allFiltered.length / PAGE_SIZE);
+  const filtered = allFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalSale = filtered.reduce((s, o) => s + o.salePrice, 0);
   const totalProfit = filtered.reduce((s, o) => s + o.profit, 0);
   const totalPurchasesAmt = purchases.reduce((s, p) => s + p.totalCost, 0);
@@ -347,8 +349,37 @@ export default function Accounts({ onToast }: Props) {
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Accounts & Sales</h2>
           <p style={{ fontSize: 13, color: "#888" }}>Data synced across all devices</p>
         </div>
-        <button onClick={() => setShowReset(true)} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13 }}>Reset All</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setShowSync(!showSync)} style={{ background: "#fff", color: "#2563EB", border: "1px solid #2563EB", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Sync</button>
+          <button onClick={() => setShowReset(true)} style={{ background: "#fff", color: "#E23744", border: "1px solid #E23744", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Reset All</button>
+        </div>
       </div>
+
+      {showSync && (
+        <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1D4ED8", marginBottom: "1rem" }}>Sync across devices</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 16 }}>
+            <div style={{ background: "#fff", borderRadius: 10, padding: "1rem", border: "1px solid #BFDBFE" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#2563EB", marginBottom: 6 }}>This device — Push</div>
+              <p style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>Generate a code to copy data to another device</p>
+              <button onClick={pushSync} disabled={syncing} style={{ width: "100%", background: "#2563EB", color: "#fff", border: "none", borderRadius: 8, padding: "8px", fontWeight: 700, fontSize: 13, cursor: "pointer", marginBottom: 8 }}>{syncing ? "Generating..." : "Generate Sync Code"}</button>
+              {syncCode && (
+                <div style={{ textAlign: "center" as const }}>
+                  <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: 8, color: "#1D4ED8", fontFamily: "monospace", padding: "12px", background: "#EFF6FF", borderRadius: 8 }}>{syncCode}</div>
+                  <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>Enter this on your other device — valid 24hrs</div>
+                </div>
+              )}
+            </div>
+            <div style={{ background: "#fff", borderRadius: 10, padding: "1rem", border: "1px solid #BFDBFE" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#2563EB", marginBottom: 6 }}>Other device — Pull</div>
+              <p style={{ fontSize: 12, color: "#888", marginBottom: 10 }}>Enter the code from your other device</p>
+              <input value={inputCode} onChange={e => setInputCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))} placeholder="000000" maxLength={6} style={{ width: "100%", padding: "10px", border: "1px solid #BFDBFE", borderRadius: 8, fontSize: 24, fontWeight: 700, textAlign: "center" as const, letterSpacing: 8, fontFamily: "monospace", marginBottom: 8, boxSizing: "border-box" as const }} />
+              <button onClick={pullSync} disabled={syncing} style={{ width: "100%", background: "#2563EB", color: "#fff", border: "none", borderRadius: 8, padding: "8px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{syncing ? "Syncing..." : "Pull Data"}</button>
+            </div>
+          </div>
+          {syncStatus && <div style={{ marginTop: 10, fontSize: 13, color: "#2563EB", textAlign: "center" as const, fontWeight: 600 }}>{syncStatus}</div>}
+        </div>
+      )}
 
       {showReset && (
         <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, padding: "1rem", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -463,6 +494,13 @@ export default function Accounts({ onToast }: Props) {
                     </tr>
                   ))}</tbody>
                 </table>
+              </div>
+            )}
+            {totalPages > 1 && (
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 12, padding: "8px 0" }}>
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #e0e0e0", background: page === 1 ? "#f5f5f5" : "#fff", cursor: page === 1 ? "not-allowed" : "pointer", fontSize: 13 }}>Prev</button>
+                <span style={{ fontSize: 13, color: "#888", fontWeight: 600 }}>Page {page} of {totalPages}</span>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #e0e0e0", background: page === totalPages ? "#f5f5f5" : "#fff", cursor: page === totalPages ? "not-allowed" : "pointer", fontSize: 13 }}>Next</button>
               </div>
             )}
           </div>
