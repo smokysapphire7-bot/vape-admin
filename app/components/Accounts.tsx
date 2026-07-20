@@ -63,6 +63,7 @@ export default function Accounts({ onToast }: Props) {
   const [payouts, setPayouts] = useState<Payout[]>([]);
 
   const [showOrderForm, setShowOrderForm] = useState(true);
+  const [orderItems, setOrderItems] = useState<{product: string; qty: string; salePrice: string; purchasePrice: string;}[]>([]);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -133,21 +134,55 @@ export default function Accounts({ onToast }: Props) {
   const savePurchases = (data: Purchase[]) => { setPurchases(data); try { localStorage.setItem("vape_purchases", JSON.stringify(data)); } catch {} };
   const savePayouts = (data: Payout[]) => { setPayouts(data); try { localStorage.setItem("vape_payouts", JSON.stringify(data)); } catch {} };
 
+  const addItemToOrder = () => {
+    if (!orderForm.product || !orderForm.salePrice) { onToast("Fill product and sale price"); return; }
+    setOrderItems(prev => [...prev, {
+      product: orderForm.product,
+      qty: orderForm.qty || "1",
+      salePrice: orderForm.salePrice,
+      purchasePrice: orderForm.purchasePrice || "0",
+    }]);
+    setOrderForm(prev => ({ ...prev, product: "Elfbar Raya D1", qty: "1", salePrice: "", purchasePrice: "" }));
+    onToast("Item added to order");
+  };
+
+  const removeOrderItem = (idx: number) => {
+    setOrderItems(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const addOrder = () => {
     if (editingId) { saveEdit(); return; }
-    if (!orderForm.salePrice) { onToast("Enter sale price"); return; }
-    const sale = parseInt(orderForm.salePrice);
-    const purchase = parseInt(orderForm.purchasePrice || "0");
-    const qty = parseInt(orderForm.qty || "1");
+
+    // Combine current form item + any added items
+    const allItems = orderForm.salePrice
+      ? [...orderItems, { product: orderForm.product, qty: orderForm.qty || "1", salePrice: orderForm.salePrice, purchasePrice: orderForm.purchasePrice || "0" }]
+      : orderItems;
+
+    if (allItems.length === 0) { onToast("Add at least one product"); return; }
+
+    // Calculate totals across all items
+    const totalSale = allItems.reduce((s, i) => s + parseInt(i.salePrice) * parseInt(i.qty), 0);
+    const totalPurchase = allItems.reduce((s, i) => s + parseInt(i.purchasePrice) * parseInt(i.qty), 0);
+    const totalQty = allItems.reduce((s, i) => s + parseInt(i.qty), 0);
+    const productNames = allItems.map(i => i.product + (parseInt(i.qty) > 1 ? " x" + i.qty : "")).join(", ");
+
     const newOrder: Order = {
       id: String(orders.length + 1).padStart(3, "0"),
-      date: orderForm.date, site: orderForm.site, product: orderForm.product,
-      qty, salePrice: sale * qty, purchasePrice: purchase * qty, profit: (sale - purchase) * qty,
-      status: orderForm.status, stockType: orderForm.stockType,
+      date: orderForm.date,
+      site: orderForm.site,
+      product: productNames,
+      qty: totalQty,
+      salePrice: totalSale,
+      purchasePrice: totalPurchase,
+      profit: totalSale - totalPurchase,
+      status: orderForm.status,
+      stockType: orderForm.stockType,
     };
+
     saveOrders([newOrder, ...orders]);
-    setOrderForm({ ...EMPTY_ORDER });
-    onToast("Order logged");
+    setOrderItems([]);
+    setOrderForm(prev => ({ ...EMPTY_ORDER, date: prev.date, site: prev.site, status: prev.status, stockType: prev.stockType }));
+    onToast("Order saved — " + allItems.length + " item(s)");
   };
 
   const startEdit = (order: Order) => {
