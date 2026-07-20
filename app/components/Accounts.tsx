@@ -62,7 +62,7 @@ export default function Accounts({ onToast }: Props) {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
 
-  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [showOrderForm, setShowOrderForm] = useState(true);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -146,7 +146,7 @@ export default function Accounts({ onToast }: Props) {
       status: orderForm.status, stockType: orderForm.stockType,
     };
     saveOrders([newOrder, ...orders]);
-    setShowOrderForm(false); setOrderForm({ ...EMPTY_ORDER });
+    setOrderForm({ ...EMPTY_ORDER });
     onToast("Order logged");
   };
 
@@ -174,7 +174,7 @@ export default function Accounts({ onToast }: Props) {
       status: orderForm.status, stockType: orderForm.stockType as "own" | "shop",
     } : o);
     saveOrders(updated);
-    setShowOrderForm(false); setEditingId(null); setOrderForm({ ...EMPTY_ORDER });
+    setEditingId(null); setOrderForm({ ...EMPTY_ORDER });
     onToast("Order updated");
   };
 
@@ -461,7 +461,7 @@ export default function Accounts({ onToast }: Props) {
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={addOrder} style={{ background: "#E23744", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>{editingId ? "Update" : "Save"}</button>
-                <button onClick={() => { setShowOrderForm(false); setEditingId(null); setOrderForm({ ...EMPTY_ORDER }); }} style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                <button onClick={() => { setEditingId(null); setOrderForm({ ...EMPTY_ORDER }); }} style={{ background: "#f5f5f5", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Clear</button>
               </div>
             </div>
           )}
