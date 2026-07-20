@@ -476,7 +476,16 @@ export default function Accounts({ onToast }: Props) {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 12 }}>
                 <div>{label("Date")}<input type="date" value={orderForm.date} onChange={e => updateO("date", e.target.value)} style={{ width: "100%", padding: "8px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 13 }} /></div>
                 <div>{label("Site")}<select value={orderForm.site} onChange={e => updateO("site", e.target.value)} style={{ width: "100%", padding: "8px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 13 }}><option value="VIM">Mumbai</option><option value="TVH">Hyderabad</option><option value="TVP">Pune</option><option value="VDB">Bangalore</option></select></div>
-                <div>{label("Product")}<select value={orderForm.product} onChange={e => updateO("product", e.target.value)} style={{ width: "100%", padding: "8px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 13 }}>{PRODUCTS.map(p => <option key={p}>{p}</option>)}</select></div>
+                <div>
+                  {label("Product")}
+                  <select value={PRODUCTS.includes(orderForm.product) ? orderForm.product : "__custom__"} onChange={e => { if (e.target.value === "__custom__") updateO("product", ""); else updateO("product", e.target.value); }} style={{ width: "100%", padding: "8px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 13, marginBottom: 4 }}>
+                    {PRODUCTS.map(p => <option key={p}>{p}</option>)}
+                    <option value="__custom__">+ Add custom product...</option>
+                  </select>
+                  {(!PRODUCTS.includes(orderForm.product)) && (
+                    <input value={orderForm.product} onChange={e => updateO("product", e.target.value)} placeholder="Type product name..." style={{ width: "100%", padding: "8px", border: "1px solid #E23744", borderRadius: 8, fontSize: 13, boxSizing: "border-box" as const }} />
+                  )}
+                </div>
                 <div>{label("Qty")}<input type="number" value={orderForm.qty} onChange={e => updateO("qty", e.target.value)} min="1" style={{ width: "100%", padding: "8px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 13 }} /></div>
                 <div>{label("Sale price/unit (Rs.)")}<input type="number" value={orderForm.salePrice} onChange={e => updateO("salePrice", e.target.value)} placeholder="2399" style={{ width: "100%", padding: "8px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 13 }} /></div>
                 <div>{label("Purchase price/unit (Rs.)")}<input type="number" value={orderForm.purchasePrice} onChange={e => updateO("purchasePrice", e.target.value)} placeholder="1800" style={{ width: "100%", padding: "8px", border: "1px solid #e0e0e0", borderRadius: 8, fontSize: 13 }} /></div>
